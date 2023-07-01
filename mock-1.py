@@ -4,11 +4,7 @@ import csv
 import finnhub
 from api_keys import FINNHUB_API_KEY
 
-# https://stackoverflow.com/questions/49723988/alphavantage-list-of-all-tickers-on-an-exchange
-# https://github.com/rreichel3/US-Stock-Symbols
-# https://finnhub.io/
-# https://polygon.io/pricing
-# https://www.alphavantage.co/documentation/
+
 
 print("Program Started")
 
