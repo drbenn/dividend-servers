@@ -14,6 +14,8 @@ import threading # needed or else the sleep function on schedule will block all 
 # finnhub_client = finnhub.Client(api_key=FINNHUB_API_KEY)
 import multiprocessing
 from urllib.request import urlopen
+import calendar
+import asyncio
 
 # print(finnhub_client.stock_symbols('US'))
 
@@ -191,7 +193,7 @@ def get_quarterly_financials(symbol): # only reports quarters 1,2,3. Require EOY
     finnhub_client = finnhub.Client(api_key=FINNHUB_API_KEY)
     response = finnhub_client.financials_reported(symbol=symbol, freq='quarterly')
     # print(response)
-    print(len(response["data"]))
+    # print(len(response["data"]))
     for item in response["data"]:
         newest_quarter = None
         year = item["year"]
@@ -202,20 +204,15 @@ def get_quarterly_financials(symbol): # only reports quarters 1,2,3. Require EOY
 
         for point in income_statement:
             if (point["label"] == "Net loss" and newest_quarter != F"{quarter} - {year}"):
-                print("Net Loss Value: ", point["value"])
-                print("net loss found")
+                # print("Net Loss Value: ", point["value"])
+                # print("net loss found")
                 newest_quarter = F"{quarter} - {year}"
                 break
             if (point["label"] == "Net income" and newest_quarter != F"{quarter} - {year}"):
-                print("Net income Value: ", point["value"])
-                print("net income found")
+                # print("Net income Value: ", point["value"])
+                # print("net income found")
                 newest_quarter = F"{quarter} - {year}"
-        print(f"YEAR: {year} ---------------- QUARTER: {quarter}")
-
-# get_quarterly_financials("tsla")
-
-
-import asyncio
+        # print(f"YEAR: {year} ---------------- QUARTER: {quarter}")
 
 
 def get_annual_financials(symbol):
@@ -242,9 +239,6 @@ def get_net_income_loss_from_annual_financials(annual_financials) -> float:
             # print(net_loss)
             return float(net_loss)
 
-
-
-
 def get_shares_outstanding_from_annual_financials(annual_financials):
     # print("in get shares outstanding")
     income_statement = annual_financials["data"][0]["report"]["ic"]
@@ -264,7 +258,6 @@ def get_annual_common_stock_total_dividend_paid(annual_financials):
             total_dividends_paid = item["value"]
             return float(total_dividends_paid)
 
-        
 def get_annualized_dividend_per_share(shares_outstanding, total_annual_dividends_paid):
     # print(f"shares: {shares_outstanding}")
     # print(f"divs paid: {total_annual_dividends_paid}")
@@ -274,11 +267,9 @@ def get_historical_dividends(symbol):
     url = f"https://financialmodelingprep.com/api/v3/historical-price-full/stock_dividend/{symbol}?apikey={FMP_API_KEY}"
     """
     Receive the content of ``url``, parse it as JSON and return the object.
-
     Parameters
     ----------
     url : str
-
     Returns
     -------
     dict
@@ -287,11 +278,6 @@ def get_historical_dividends(symbol):
     data = response.read().decode("utf-8")
     # print(json.loads(data))
     return json.loads(data)
-
-get_historical_dividends('o')
-
-import calendar
-
 
 def get_ttm_dividend_per_share_count_and_months(shares_outstanding, historical_dividends):
     latest_dividend = historical_dividends["historical"][0]
@@ -320,43 +306,6 @@ def get_ttm_dividend_per_share_count_and_months(shares_outstanding, historical_d
         "dividend_payment_months": dividend_payment_months
     }
 
-# def get_years_of_dividend_growth_total_dividend(year_report):
-#     cashflow_statement = year_report["report"]["cf"]
-#     for item in cashflow_statement:
-#         if item["concept"] == "us-gaap_PaymentsOfDividendsCommonStock" or item["concept"] == "PaymentsOfDividendsCommonStock":
-#             total_dividends_paid = item["value"]
-#             return float(total_dividends_paid)
-        
-# def get_years_of_dividend_growth_total_shares(year_report):
-#     income_statement = year_report["report"]["ic"]
-#     # print(income_statement)
-#     for item in income_statement:
-#         # print(item)
-#         if item["concept"] == "us-gaap_WeightedAverageNumberOfDilutedSharesOutstanding" or item["concept"] == "WeightedAverageNumberOfDilutedSharesOutstanding":
-#             diluted_shares_outstanding = item["value"]
-#             return float(diluted_shares_outstanding)
-
-
-
-# def get_years_of_dividend_growth_COUNT(list_annual_dividend_dict):
-#     print(list_annual_dividend_dict["annual_dividends"])
-#     div_dict_list = list_annual_dividend_dict["annual_dividends"]
-#     year_of_most_recent_dividend = div_dict_list[0]["year"]
-#     first_full_year_total_dividend_amount = float(div_dict_list[1]["total_annual_dividend"])
-#     annual_amount_checked = float(div_dict_list[1]["total_annual_dividend"])
-#     consective_growth_year_count = 0
-#     for dividend in div_dict_list:
-#         print("DIV")
-#         print(dividend)
-#         if dividend["year"] == year_of_most_recent_dividend or dividend["year"] == (year_of_most_recent_dividend -1):
-#             return
-#         elif annual_amount_checked > dividend["total_annual_dividend"]:
-#             consective_growth_year_count += 1
-#             annual_amount_checked = dividend
-#         else:
-#             continue
-#     print("SHAZAM")
-#     print(consective_growth_year_count)
 
 def combine_dividends_into_annual_dividends(historical_dividends):
     annual_dividends = []
@@ -375,31 +324,27 @@ def get_consistent_years_dividend_growth(annual_dividends):
     count = 0
     print('list in COUNTER')
     print(annual_dividends)
-    # remove most recent year because not all divs may be included for the year
     div_being_checked = annual_dividends[1]["total_annual_dividend"]
+    # remove 2 most recent year because not all divs may be included in first year and second year amount is already assinged as div_being_checked
     full_annual_dividends = annual_dividends[2:]
     
     for dividend in full_annual_dividends:
-        print(dividend)
-        print(div_being_checked)
-        print(dividend["total_annual_dividend"])
         if div_being_checked > dividend["total_annual_dividend"]:
             count += 1
             div_being_checked = dividend["total_annual_dividend"]
         else:
             break
     
-    return count
+    return int(count)
 
 
 
 def get_years_of_dividend_growth(historical_dividends):
-    # TODO - repeating but potentially just replace with call to get_annual_common_stock_total_dividend_paid(annual_financials):
     dividend_growth = {
         # "symbol": "symbol",
         # "max_years_on_record":0,
-        "yoy_growth": 0,
-        "growth_all_years_on_record": None,
+        # "yoy_growth": 0,
+        # "growth_all_years_on_record": None,
         # "annual_dividends": [] # now added after finished completion in combine_dividends_into_annual_dividends
     }
     
@@ -408,62 +353,79 @@ def get_years_of_dividend_growth(historical_dividends):
     dividend_growth["max_years_on_record"] = int(len(dividend_growth["annual_dividends"]))
     dividend_growth["symbol"] = historical_dividends["symbol"]
     consistent_growth_years_count = get_consistent_years_dividend_growth(annual_dividends_dict_list)
-
-    # year_of_most_recent_dividend = int(historical_dividends["historical"][0]["paymentDate"][:4])
-    # # exclude year of most recent dividend because maybe incomplete
-    # print(f"year of most recent div: {year_of_most_recent_dividend}")
-
-
-
-
-    # # tally how long dividends have been increaseing in a row
-    # first_full_year_total_dividend_amount = float(dividend_growth["annual_dividends"][1]["total_annual_dividend"])
-    # annual_amount_checked = float(dividend_growth["annual_dividends"][1]["total_annual_dividend"])
-    # consective_growth_year_count = 0
-    # COUNT = get_years_of_dividend_growth_COUNT(dividend_growth)
-    # print(dividend_growth)
-
-
-
-
-    # for year_report in annual_financials["data"]:
-    #     annual_dividend = get_years_of_dividend_growth_total_dividend(year_report)
-    #     annual_shares_outstanding = get_years_of_dividend_growth_total_shares(year_report)
-    #     print(year_report["year"])
-    #     print(f"annual div: {annual_dividend} shares: {annual_shares_outstanding}")
-    #     dividend_per_share = (annual_dividend / annual_shares_outstanding)
-    #     print(dividend_per_share)
-    #     dividend_growth["annual_dividends"].append({"year": year_report["year"], "annual_dividend_per_share": float(dividend_per_share)})
-
-    #     if dividend_growth["yoy_growth"] == 0 and annual_dividend:
-    #         dividend_growth["yoy_growth"] += 1
-    #     elif dividend_growth["annual_dividends"][-2]["annual_dividend_per_share"] > dividend_growth["annual_dividends"][-1]["annual_dividend_per_share"]: 
-    #         dividend_growth["yoy_growth"] += 1
-
-    # if dividend_growth["yoy_growth"] == dividend_growth["max_years_on_record"]:
-    #     dividend_growth["growth_all_years_on_record"] = True
-    # else:
-    #     dividend_growth["growth_all_years_on_record"] = False 
-
-    # print('final div growth')
+    dividend_growth["yoy_growth"] = consistent_growth_years_count
+    dividend_growth["growth_all_years_on_record"] = True if len(dividend_growth["annual_dividends"]) == dividend_growth["yoy_growth"] else False
+    
     # print(dividend_growth)
     return dividend_growth
 
+def get_all_us_tickers():
+    finnhub_client = finnhub.Client(api_key=FINNHUB_API_KEY)
+    finnhub_stock_listing = finnhub_client.stock_symbols('US')
+    # print(finnhub_stock_listing)
+    active_tickers = []
+    types = []
+    currencies = []
+    us_stocks = {
+        "common_stock": [],
+        "etp": [],
+        "reit": []
+    }
+    for stock in finnhub_stock_listing:
+      if stock["type"] == "Common Stock":
+          us_stocks["common_stock"].append({"symbol": stock["symbol"], "description": stock["description"]})
+      if stock["type"] == "ETP": 
+          us_stocks["etp"].append({"symbol": stock["symbol"], "description": stock["description"]})
+      if stock["type"] == "REIT": 
+          us_stocks["reit"].append({"symbol": stock["symbol"], "description": stock["description"]})
 
+    # print(us_stocks)
+    print(f"length stocks: {len(us_stocks['common_stock'] ) }")
+    print(f"length etf: {len(us_stocks['etp'] ) }")
+    print(f"length reit: {len(us_stocks['reit'] ) }")
+    
+  # get common stock, reit, etp(exchange traded product which cna be etf), open end fund(which can be mutual fund)
+#   for item in finnhub_stock_listing:
+#     if item["type"] not in types:
+#         types.append(item["type"])
+#     if item["symbol"] == "SCHD":
+#         print(item)
+#     if item["currency"] not in currencies:
+#         currencies.append(item["currency"])
+#   print(types)
+#   print(currencies)
+  # print(finnhub_client.stock_symbols('US'))
+  # with open(finnhub_stock_listing) as data_file:
+  #   data = json.load(data_file)
+#   for item in finnhub_stock_listing:
+    # print(v.keys())
+    #   print(v['x'], v['y'], v['yr'])
+    # # print(row[0])
+    # print(v)
+
+    # print(item['symbol'])
+    # print(item['description'])
+
+    # activeTickers.append(
+    #   {
+    #     "ticker": item['symbol'], 
+    #     "title": item['description']
+    #   }
+    # )
 
 STOCK = "msft"
 
+get_all_us_tickers = get_all_us_tickers()
+# get_quarterly_financials(STOCK)
+# annual_financials = get_annual_financials(STOCK)
+# net_income_loss = get_net_income_loss_from_annual_financials(annual_financials)
+# shares_outstanding = get_shares_outstanding_from_annual_financials(annual_financials)
+# total_annual_dividend_paid = get_annual_common_stock_total_dividend_paid(annual_financials)
+# annualize_dividend_per_share = get_annualized_dividend_per_share(shares_outstanding, total_annual_dividend_paid)
+# historical_dividends = get_historical_dividends(STOCK)
+# ttm_dividend_per_share_metrics = get_ttm_dividend_per_share_count_and_months(shares_outstanding, historical_dividends)
+# years_of_dividend_growth = get_years_of_dividend_growth(historical_dividends)
 
-# get_historical_dividends(STOCK)
-annual_financials = get_annual_financials(STOCK)
-net_income_loss = get_net_income_loss_from_annual_financials(annual_financials)
-shares_outstanding = get_shares_outstanding_from_annual_financials(annual_financials)
-total_annual_dividend_paid = get_annual_common_stock_total_dividend_paid(annual_financials)
-annualize_dividend_per_share = get_annualized_dividend_per_share(shares_outstanding, total_annual_dividend_paid)
-historical_dividends = get_historical_dividends(STOCK)
-ttm_dividend_per_share_metrics = get_ttm_dividend_per_share_count_and_months(shares_outstanding, historical_dividends)
-years_of_dividend_growth = get_years_of_dividend_growth(historical_dividends)
-# print(ttm_dividend_per_share_metrics)
 
 
 # EPS = net_income_loss / shares_outstanding
