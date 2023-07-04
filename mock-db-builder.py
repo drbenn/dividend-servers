@@ -339,6 +339,8 @@ def get_historic_dividends(connection, db_stocks) -> any:
       dividend_payment_months_and_count = get_payment_months_and_count(historic_dividends)
       growth_all_years_of_history = len(annual_dividends) == years_dividend_growth
       current_dividend_yield = calculate_current_dividend_yield(ticker, historic_dividends, dividend_payment_months_and_count)
+      three_year_cagr = calculate_x_year_cagr(annual_dividends, 3)
+      five_year_cagr = calculate_x_year_cagr(annual_dividends, 5)
       print("YEARS GROWTH")
       print(years_dividend_growth)
       # TODO update historic dividends and related calculation in db
@@ -400,27 +402,21 @@ def calculate_current_dividend_yield(ticker, historic_dividends, dividend_paymen
     # Get current price from finnhub api
     current_quote = finnhub_client.quote(ticker)
     current_price = current_quote["c"]
-    print("In quote")
-    print(ticker)
-    print(dividend_payment_months_and_counts)
     payments_per_year = dividend_payment_months_and_counts["ttm_dividend_payment_count"]
-    print("payments_per_year")
-    print(payments_per_year)
-    print(historic_dividends)
     ttm_dividends = 0
     for item in historic_dividends["historical"][:payments_per_year]:
-      print(item)
       ttm_dividends += float(item["dividend"])
-    print(ttm_dividends)
     current_dividend_yield = round( ( ttm_dividends / current_price), 4 )
-    print(current_dividend_yield)
     return current_dividend_yield
 
-
-    # Get last four dividends from db sourced from fmp api
-
-    # dividend yield = annual dividend by current share price
-    # return (sum_of_last_four_dividends / current_price)
+def calculate_x_year_cagr(annual_dividends, years) -> float:
+    if len(annual_dividends) >= years + 2:
+      beginning_balance = float(annual_dividends[years + 1]["total_annual_dividend"])
+      ending_balance = float(annual_dividends[1]["total_annual_dividend"]) # most recent year with all dividends
+      cagr = round(float(((ending_balance / beginning_balance) ** ( 1 / years ))  - 1), 4)
+      return cagr
+    else:
+       return 0
 
 # ------------------------------------------------------------------------------------------------
 # ------------------------------  DIVIDEND HISTORY -----------------------------------------------
