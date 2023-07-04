@@ -7,6 +7,7 @@ from api_keys import FINNHUB_API_KEY, FMP_API_KEY
 import json
 finnhub_client = finnhub.Client(api_key=FINNHUB_API_KEY)
 from urllib.request import urlopen
+import calendar
 
 
 db_schema = {
@@ -335,9 +336,11 @@ def get_historic_dividends(connection, db_stocks) -> any:
       # TODO calculations on historic dividends
       annual_dividends = combine_dividends_into_annual_dividends(historic_dividends)
       years_dividend_growth = get_consistent_years_dividend_growth(annual_dividends)
+      dividend_payment_months_and_count = get_payment_months_and_count(historic_dividends)
+      growth_all_years_of_history = len(annual_dividends) == years_dividend_growth
+      current_dividend_yield = calculate_current_dividend_yield(ticker, historic_dividends, dividend_payment_months_and_count)
       print("YEARS GROWTH")
       print(years_dividend_growth)
-      # growth_all_years_of_history = somefunction()
       # TODO update historic dividends and related calculation in db
 
 
@@ -362,15 +365,62 @@ def get_consistent_years_dividend_growth(annual_dividends) -> int:
     div_being_checked = annual_dividends[1]["total_annual_dividend"]
     # remove 2 most recent year because not all divs may be included in first year and second year amount is already assinged as div_being_checked
     full_annual_dividends = annual_dividends[2:]
-    
     for dividend in full_annual_dividends:
         if div_being_checked > dividend["total_annual_dividend"]:
             count += 1
             div_being_checked = dividend["total_annual_dividend"]
         else:
             break
-    
     return int(count)
+
+def get_payment_months_and_count(historic_dividends):
+    latest_dividend = historic_dividends["historical"][0]
+    latest_ex_dividend_date = latest_dividend["date"]
+    latest_ex_dividend_date_as_date = dt.strptime(latest_ex_dividend_date, '%Y-%m-%d')
+    one_year_with_wiggle_room_for_weekends = timedelta(days=360)
+    one_year_ago = latest_ex_dividend_date_as_date - one_year_with_wiggle_room_for_weekends
+    annual_dividend_payment_count = 0
+    dividend_payment_months = []
+
+    for item in historic_dividends["historical"]:
+        item_date = dt.strptime(item["date"], '%Y-%m-%d')
+        item_payment_month_number = item_date.month
+        item_payment_month = calendar.month_abbr[item_payment_month_number]
+        if item_date > one_year_ago:
+            annual_dividend_payment_count +=1
+            dividend_payment_months.append(item_payment_month)
+
+    return {
+        "ttm_dividend_payment_count": annual_dividend_payment_count,
+        "dividend_payment_months": dividend_payment_months
+    }
+
+
+def calculate_current_dividend_yield(ticker, historic_dividends, dividend_payment_months_and_counts) -> float:
+    # Get current price from finnhub api
+    current_quote = finnhub_client.quote(ticker)
+    current_price = current_quote["c"]
+    print("In quote")
+    print(ticker)
+    print(dividend_payment_months_and_counts)
+    payments_per_year = dividend_payment_months_and_counts["ttm_dividend_payment_count"]
+    print("payments_per_year")
+    print(payments_per_year)
+    print(historic_dividends)
+    ttm_dividends = 0
+    for item in historic_dividends["historical"][:payments_per_year]:
+      print(item)
+      ttm_dividends += float(item["dividend"])
+    print(ttm_dividends)
+    current_dividend_yield = round( ( ttm_dividends / current_price), 4 )
+    print(current_dividend_yield)
+    return current_dividend_yield
+
+
+    # Get last four dividends from db sourced from fmp api
+
+    # dividend yield = annual dividend by current share price
+    # return (sum_of_last_four_dividends / current_price)
 
 # ------------------------------------------------------------------------------------------------
 # ------------------------------  DIVIDEND HISTORY -----------------------------------------------
