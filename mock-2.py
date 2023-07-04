@@ -16,6 +16,10 @@ import multiprocessing
 from urllib.request import urlopen
 import calendar
 import asyncio
+import psycopg2
+import finnhub
+from psycopg2.extras import Json
+
 
 # print(finnhub_client.stock_symbols('US'))
 
@@ -181,7 +185,7 @@ def calculate_x_year_cagr(ending_balance, beginning_balance, years):
     cagr = ((ending_balance / beginning_balance) ** ( 1 / years ))  - 1
     print(cagr)
 
-calculate_x_year_cagr(2.54,1.59,5) # verified against MSFT Payouts of: $2.54 in 2022 vs $1.59 in 2017, 2022 - 2017 = 5 years for 0.09821 5yr CAGR
+calculate_x_year_cagr(2.54,1.59,5) # verified against MSFT total dividend/share payouts of: $2.54 in 2022 vs $1.59 in 2017, 2022 - 2017 = 5 years for 0.09821 5yr CAGR
 
 def calculate_dividend_payout_ratio(net_income, dividends_paid):
     dividend_payout_ratio = (dividends_paid / net_income)
@@ -362,10 +366,6 @@ def get_years_of_dividend_growth(historical_dividends):
 def get_all_us_tickers():
     finnhub_client = finnhub.Client(api_key=FINNHUB_API_KEY)
     finnhub_stock_listing = finnhub_client.stock_symbols('US')
-    # print(finnhub_stock_listing)
-    active_tickers = []
-    types = []
-    currencies = []
     us_stocks = {
         "common_stock": [],
         "etp": [],
@@ -379,10 +379,7 @@ def get_all_us_tickers():
       if stock["type"] == "REIT": 
           us_stocks["reit"].append({"symbol": stock["symbol"], "description": stock["description"]})
 
-    # print(us_stocks)
-    print(f"length stocks: {len(us_stocks['common_stock'] ) }")
-    print(f"length etf: {len(us_stocks['etp'] ) }")
-    print(f"length reit: {len(us_stocks['reit'] ) }")
+    return us_stocks
     
   # get common stock, reit, etp(exchange traded product which cna be etf), open end fund(which can be mutual fund)
 #   for item in finnhub_stock_listing:
@@ -413,9 +410,21 @@ def get_all_us_tickers():
     #   }
     # )
 
+def get_company_profile(symbol):
+    finnhub_client = finnhub.Client(api_key=FINNHUB_API_KEY)
+    finnhub_company_profile = finnhub_client.company_profile2(symbol=symbol)
+    company_profile = {
+        "industry": finnhub_company_profile["finnhubIndustry"],
+        "website": finnhub_company_profile["weburl"],
+        "logo": finnhub_company_profile["logo"]
+    }
+    return company_profile
+
+
 STOCK = "msft"
 
-get_all_us_tickers = get_all_us_tickers()
+company_profile = get_company_profile(STOCK)
+# all_us_tickers = get_all_us_tickers()
 # get_quarterly_financials(STOCK)
 # annual_financials = get_annual_financials(STOCK)
 # net_income_loss = get_net_income_loss_from_annual_financials(annual_financials)
@@ -434,6 +443,50 @@ get_all_us_tickers = get_all_us_tickers()
 # print('div per share')
 # print(total_annual_dividend_paid)
 # print(annualize_dividend_per_share)
+
+
+
+
+
+
+
+con = psycopg2.connect(
+    host="localhost",
+    database="NewDB",
+    user="postgres",
+    password="postgres",
+    port="5432")
+
+#cursor
+cur = con.cursor()
+
+
+def get_current_stock_price(symbol):
+  finnhub_client = finnhub.Client(api_key=FINNHUB_API_KEY)
+  quote_response = finnhub_client.quote(symbol)
+  current_price = quote_response["c"]
+  percent_change = quote_response["dp"]
+  previous_close = quote_response["pc"]
+  print([quote_response])
+  # print(quote_response, current_price, percent_change, previous_close)
+  # print('current price: ', current_price, 'percent change: ', percent_change, 'previous close: ', previous_close)
+  cur.execute("insert into persons (personid, fullname, jsontest) values (%s, %s, %s)", (10, 'Big Bill', Json(quote_response)))
+
+
+get_current_stock_price("msft")
+
+# cur.execute("insert into persons (personid, fullname) values (%s, %s)", (2, 'Johny'))
+
+# cur.execute("select * from persons")
+# rows = cur.fetchall()
+
+# for r in rows:
+#   print(f"id: {r[0]}, name {r[1]}, json {r[2]}")
+
+# must commit transaction/changes when inserting(& deleting?). Commit not needed for get
+con.commit()
+# close the cursor
+cur.close()
 
 if __name__ == "__main__": app.run()
 
