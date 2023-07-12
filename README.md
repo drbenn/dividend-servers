@@ -60,3 +60,25 @@ pip install psycopg2
 # 	username VARCHAR ( 50 ) PRIMARY KEY,
 # 	portfolios JSONB
 # );
+
+
+# CREATE TABLE grizzly_run_log (
+# 	time_stamp TIMESTAMP WITH TIME ZONE,
+# 	summary VARCHAR ( 100 )
+# );
+
+# NAMECHEAP HOSTING
+* https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwi_rb_qn4SAAxWPKlkFHV-nCksQFnoECBoQAQ&url=https%3A%2F%2Fwww.namecheap.com%2Fsupport%2Fknowledgebase%2Farticle.aspx%2F10048%2F2182%2Fhow-to-work-with-python-app%2F&usg=AOvVaw39kwn3CXhqjBE3YKbksZbI&opi=89978449
+
+* https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwi_rb_qn4SAAxWPKlkFHV-nCksQFnoECCcQAQ&url=https%3A%2F%2Fwww.namecheap.com%2Fsupport%2Fknowledgebase%2Farticle.aspx%2F9587%2F29%2Fhow-to-run-python-scripts%2F&usg=AOvVaw0XEYSO6nsXopt3gXHIsq-w&opi=89978449
+
+* https://devpress.csdn.net/cicd/62ec375619c509286f416824.html
+
+* https://www.youtube.com/watch?v=IBfj_0Zf2Mo
+
+* 1. create app
+* 2. stop app
+* 3. go to file manager and overwrite app.py and also upload requirements.txt in same directory
+* 4. Go to python app, in configuration files type in requirements.txt and add
+
+* create requirements with pip freeze > requirements.txt in terminal

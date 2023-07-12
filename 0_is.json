@@ -1,0 +1,96 @@
+[
+  {
+    "concept": "us-gaap_LeaseIncome",
+    "unit": "usd",
+    "label": "Rental (including reimbursable)",
+    "value": 3299700000.0
+  },
+  {
+    "concept": "us-gaap_OtherIncome",
+    "unit": "usd",
+    "label": "Other",
+    "value": 44000000.0
+  },
+  {
+    "concept": "us-gaap_Revenues",
+    "unit": "usd",
+    "label": "Total revenue",
+    "value": 3343700000.0
+  },
+  {
+    "concept": "us-gaap_DepreciationDepletionAndAmortization",
+    "unit": "usd",
+    "label": "Depreciation and amortization",
+    "value": 1670389000.0
+  },
+  {
+    "concept": "us-gaap_InterestExpense",
+    "unit": "usd",
+    "label": "Interest",
+    "value": 465223000
+  },
+  {
+    "concept": "us-gaap_DirectCostsOfLeasedAndRentedPropertyOrEquipment",
+    "unit": "usd",
+    "label": "Property (including reimbursable)",
+    "value": 226330000
+  },
+  {
+    "concept": "us-gaap_GeneralAndAdministrativeExpense",
+    "unit": "usd",
+    "label": "General and administrative",
+    "value": 138459000
+  },
+  {
+    "concept": "us-gaap_ImpairmentOfRealEstate",
+    "unit": "usd",
+    "label": "Provisions for impairment",
+    "value": 25900000.0
+  },
+  {
+    "concept": "us-gaap_BusinessCombinationAcquisitionRelatedCosts",
+    "unit": "usd",
+    "label": "Merger and integration-related costs",
+    "value": 13897000
+  },
+  {
+    "concept": "us-gaap_CostsAndExpenses",
+    "unit": "usd",
+    "label": "Total expenses",
+    "value": 2540158000
+  },
+  {
+    "concept": "us-gaap_GainLossOnSaleOfProperties",
+    "unit": "usd",
+    "label": "Gain on sales of real estate",
+    "value": 102957000.0
+  },
+  {
+    "concept": "o_GainLossOnForeignCurrencyAndUnrealizedDerivativesNet",
+    "unit": "usd",
+    "label": "Foreign currency and derivative (loss) gain, net",
+    "value": -13311000.0
+  },
+  {
+    "concept": "us-gaap_GainsLossesOnExtinguishmentOfDebt",
+    "unit": "usd",
+    "label": "Gain (loss) on extinguishment of debt",
+    "value": 367000.0
+  },
+  {
+    "concept": "us-gaap_IncomeLossFromEquityMethodInvestments",
+    "unit": "usd",
+    "label": "Equity in income and impairment of investment in unconsolidated entities",
+    "value": -6448000.0
+  },
+  {
+    "concept": "us-gaap_OtherNonoperatingIncomeExpense",
+    "unit": "usd",
+    "label": "Other income, net",
+    "value": 30511000
+  },
+  {
+    "concept": "us-gaap_IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest",
+    "unit": "usd",
+    "label": "Income 
+before income taxes", "value": 917599000}, {"concept": "us-gaap_IncomeTaxExpenseBenefit", "unit": "usd", "label": "Income taxes", "value": 45183000}, {"concept": "us-gaap_ProfitLoss", "unit": "usd", "label": "Net income", "value": 872416000.0}, {"concept": "us-gaap_NetIncomeLossAttributableToNoncontrollingInterest", "unit": "usd", "label": "Net income attributable to noncontrolling interests", "value": 3008000}, {"concept": "us-gaap_NetIncomeLoss", "unit": "usd", "label": "Net income available to common stockholders", "value": 869408000.0}, {"concept": "us-gaap_EarningsPerShareBasic", "unit": "usd/share", "label": "Net income, basic (in dollars per share)", "value": 1}, {"concept": "us-gaap_EarningsPerShareDiluted", "unit": "usd/share", "label": "Net income, diluted (in dollars per share)", "value": 1}, {"concept": "us-gaap_WeightedAverageNumberOfSharesOutstandingBasic", "unit": "shares", "label": "Basic (in shares)", "value": 611765815.0}, {"concept": "us-gaap_WeightedAverageNumberOfDilutedSharesOutstanding", "unit": "shares", "label": "Diluted (in shares)", "value": 612180519.0}, {"concept": "us-gaap_OtherComprehensiveIncomeForeignCurrencyTransactionAndTranslationAdjustmentNetOfTaxPortionAttributableToParent", "unit": "usd", "label": "Foreign currency translation adjustment", "value": -55154000}, {"concept": "us-gaap_OtherComprehensiveIncomeLossCashFlowHedgeGainLossAfterReclassificationAndTaxParent", "unit": "usd", "label": "Unrealized gain (loss) on derivatives, net", "value": 97054000.0}, {"concept": "us-gaap_OtherComprehensiveIncomeLossNetOfTax", "unit": "usd", "label": "Other comprehensive income (loss)", "value": 41900000.0}, {"concept": "us-gaap_ComprehensiveIncomeNetOfTax", "unit": "usd", "label": "Comprehensive income available to common stockholders", "value": 911308000}]
