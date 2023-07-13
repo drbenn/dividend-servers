@@ -122,13 +122,15 @@ def get_never_updated_annual_financials_and_determine_if_dividends(db_stocks) ->
   eligible_ticker_dicts = []
 
   for item in db_stocks:
-    if item[db_schema["has_dividend"]] == None and tickers_eligible_for_update <= NEVER_UPDATED_CYCLE_ROW_LIMIT:
-      eligible_ticker_dicts.append(item)
-      tickers_eligible_for_update += 1 
+    # if item[db_schema["has_dividend"]] == None and tickers_eligible_for_update <= NEVER_UPDATED_CYCLE_ROW_LIMIT:
+      if item[db_schema["ticker"]] == "SCHD" and tickers_eligible_for_update <= NEVER_UPDATED_CYCLE_ROW_LIMIT:
+        eligible_ticker_dicts.append(item)
+        tickers_eligible_for_update += 1 
 
   for index, item in enumerate(eligible_ticker_dicts):
     ticker = item[db_schema['ticker']]
     annual_financials = get_annual_financials(ticker)
+    # print(annual_financials)
     is_dividend_payer = determine_if_dividend_payer_from_annual_financials(annual_financials)
     print(f"{index + 1} of {NEVER_UPDATED_CYCLE_ROW_LIMIT} - {ticker} is a dividend payer?: {is_dividend_payer}")
     update_db_with_annual_financials(ticker, is_dividend_payer, annual_financials)
@@ -191,36 +193,44 @@ def update_db_dividend_payer_false(is_dividend_payer, ticker):
 
 
 
-def get_historic_dividends(ticker) -> any:
+def get_historic_dividends_from_fmp(ticker) -> any:
   print(f"ticker in get historic being procesed: {ticker}")
   url = f"https://financialmodelingprep.com/api/v3/historical-price-full/stock_dividend/{ticker}?apikey={FMP_API_KEY}"
   try:
     with urlopen(url, timeout=10) as response:
       data = response.read().decode("utf-8")
       historic_dividends = json.loads(data) # json.loads converts json string to python dictionary
-      print("historic dividends received")
-      print(historic_dividends)
-      update_db_with_historic_dividends_and_related_calculations(historic_dividends, ticker)
-      print(f"Historic FMP call successful for ticker {ticker}")
-      return True
+      return historic_dividends
   except HTTPError as error:
     print(f"FMP API CALL HTTPError for ticker {ticker}: {error.status}, {error.reason}")
-    return False
+    return
   except URLError as error:
     print(f"FMP API CALL URLError for ticker {ticker}: {error.reason}")
-    return False
+    return
   except TimeoutError:
     print(f"FMP API CALL TimeoutError: Request timed out for ticker {ticker}")
-    return False
+    return
+  except:
+    print(f"FMP API CALL Unknown Error {ticker}. Marking ticker as !has_dividend")
+    update_db_dividend_payer_false(False, ticker)
+    return
 
 
 def update_db_with_historic_dividends_and_related_calculations(historic_dividends, ticker) -> any:
+  print(historic_dividends)
   dividend_history = historic_dividends["historical"]
+  payment_date_string = None
+  if "paymentDate" in dividend_history[0].keys():
+    payment_date_string = "paymentDate"
+  elif "payment_date" in dividend_history[0].keys():
+    payment_date_string = "payment_date"
   if len(dividend_history) == 0:
     # if not_dividend_payer last_updated timestamp set to catch for periodic review AND financial NOT stored in database
     update_db_dividend_payer_false(False, ticker)
+    return
   else:
-    annual_dividends = combine_dividends_into_annual_dividends(historic_dividends)
+    print(historic_dividends)
+    annual_dividends = combine_dividends_into_annual_dividends(historic_dividends, payment_date_string)
     years_dividend_growth = get_consistent_years_dividend_growth(annual_dividends)
     dividend_payment_months_and_count = get_payment_months_and_count(historic_dividends)
     growth_all_years_of_history = len(annual_dividends) == years_dividend_growth
@@ -237,13 +247,13 @@ def update_db_with_historic_dividends_and_related_calculations(historic_dividend
     connection.commit()
     cur.close()
 
-def combine_dividends_into_annual_dividends(historic_dividends) -> list[object]:
+def combine_dividends_into_annual_dividends(historic_dividends, payment_date_string) -> list[object]:
   historic_dividends = historic_dividends["historical"]
   annual_dividends = []
   for payment in historic_dividends:
     # listed year of most recent payment date
-    if len(payment["paymentDate"][:4]) > 0:
-      payment_year = int(payment["paymentDate"][:4])
+    if len(payment[payment_date_string][:4]) > 0:
+      payment_year = int(payment[payment_date_string][:4])
       dividend_amount = float(payment["dividend"])
       if any(dictionary.get("year") == payment_year for dictionary in annual_dividends):
         for i in annual_dividends:
@@ -323,7 +333,10 @@ def calculate_current_dividend_yield(ticker, historic_dividends, dividend_paymen
     payments_per_year = dividend_payment_months_and_counts["ttm_dividend_payment_count"]
     ttm_dividends = 0
     for item in historic_dividends["historical"][:payments_per_year]:
-      ttm_dividends += float(item["dividend"])
+      if item["dividend"] == None:
+        ttm_dividends += 0
+      else:
+        ttm_dividends += float(item["dividend"])
     current_dividend_yield = round(float((ttm_dividends / current_price)), 4)
     return current_dividend_yield
 
@@ -342,30 +355,38 @@ def calculate_x_year_cagr(annual_dividends, years) -> float:
 
 
 def get_company_profiles_and_update_db(ticker) -> any:
-  finnhub_company_profile = finnhub_client.company_profile2(symbol=ticker)
-  industry = finnhub_company_profile["finnhubIndustry"]
-  website = finnhub_company_profile["weburl"]
-  logo = finnhub_company_profile["logo"]
-  query = "UPDATE grizzly_stocks SET industry = %s, website = %s, logo = %s WHERE ticker = %s"
-  cur = connection.cursor()
-  cur.execute(query, (industry, website, logo, ticker))
-  connection.commit()
-  cur.close()
-  return True
+  try:
+    finnhub_company_profile = finnhub_client.company_profile2(symbol=ticker)
+    industry = finnhub_company_profile["finnhubIndustry"]
+    website = finnhub_company_profile["weburl"]
+    logo = finnhub_company_profile["logo"]
+    query = "UPDATE grizzly_stocks SET industry = %s, website = %s, logo = %s WHERE ticker = %s"
+    cur = connection.cursor()
+    cur.execute(query, (industry, website, logo, ticker))
+    connection.commit()
+    cur.close()
+    return
+  except Exception:
+    print("Finnhub api call failed. No company profile available.")
+    return
 
 
-def get_basic_financials_and_update_db(ticker) -> any:
+
+def get_basic_financials_hi_low_beta_and_update_db(ticker) -> any:
   basic_financials = finnhub_client.company_basic_financials(ticker, 'all')
   json_basic_financials = json.dumps(basic_financials)
   year_high = float(basic_financials["metric"]["52WeekHigh"])
   year_low = float(basic_financials["metric"]["52WeekLow"])
-  beta = float(basic_financials["metric"]["beta"])
-  query = "UPDATE grizzly_stocks SET basic_financials = %s, year_price_high = %s, year_price_low = %s, beta = %s WHERE ticker = %s"
-  cur = connection.cursor()
-  cur.execute(query, (json_basic_financials, year_high, year_low, beta, ticker))
-  connection.commit()
-  cur.close()
-  return True
+  beta = None
+  try:
+    beta = float(basic_financials["metric"]["beta"])
+  finally:
+    query = "UPDATE grizzly_stocks SET basic_financials = %s, year_price_high = %s, year_price_low = %s, beta = %s WHERE ticker = %s"
+    cur = connection.cursor()
+    cur.execute(query, (json_basic_financials, year_high, year_low, beta, ticker))
+    connection.commit()
+    cur.close()
+    return
 
 
 # ------------------------------------------------------------------------------------------------
@@ -374,15 +395,34 @@ def get_basic_financials_and_update_db(ticker) -> any:
 
 
 def calculate_payout_ratios_and_update_db(ticker)  -> str:
+  data = get_historic_dividends_and_financials_from_db(ticker)
+  annual_dividends = data[0][0]
+  annual_financials = data[0][1]["data"]
+  annual_payout_ratios = build_annual_payout_ratios(annual_financials, annual_dividends)
+  update_db_with_payout_ratio_dictionary(annual_payout_ratios, ticker)
+  return
+
+def get_historic_dividends_and_financials_from_db(ticker):
   query = "SELECT annual_dividends, historic_annual_financials FROM grizzly_stocks WHERE ticker = %s"
   cur = connection.cursor()
   cur.execute(query, (ticker,))
   data = cur.fetchall()
   cur.close()
-  annual_dividends = data[0][0]
-  annual_financials = data[0][1]["data"]
-  annual_payout_ratios = []
+  return data
 
+def update_db_with_payout_ratio_dictionary(annual_payout_ratios, ticker):
+  json_payouts = json.dumps(annual_payout_ratios)
+  cur = connection.cursor()
+  query = "UPDATE grizzly_stocks SET payout_ratios = %s, last_updated = %s WHERE ticker = %s"
+  cur = connection.cursor()
+  cur.execute(query, [json_payouts, datetime.datetime.now(), ticker])
+  connection.commit()
+  cur.close()
+  return
+
+def build_annual_payout_ratios(annual_financials, annual_dividends):
+  annual_payout_ratios = []
+  print(annual_dividends)
   for annual in annual_financials:
     if any(dictionary.get("year") == annual["year"] for dictionary in annual_dividends):
       annual_dividend_dictionary = None
@@ -397,18 +437,7 @@ def calculate_payout_ratios_and_update_db(ticker)  -> str:
           netIncomeLoss = float(item["value"])
           payout_ratio = annual_dividend_paid / netIncomeLoss
           annual_payout_ratios.append({ "year": annual["year"], "payout_ratio": payout_ratio, "net_income_loss": item["value"]})
-
-  # update db with payout ratio dict
-  json_payouts = json.dumps(annual_payout_ratios)
-  cur = connection.cursor()
-  query = "UPDATE grizzly_stocks SET payout_ratios = %s, last_updated = %s WHERE ticker = %s"
-  cur = connection.cursor()
-  cur.execute(query, [json_payouts, datetime.datetime.now(), ticker])
-  connection.commit()
-  cur.close()
-  return ticker
-
-
+  return annual_payout_ratios
 
 
 def grab_db_data_tickers_never_updated_with_has_dividends(connection) -> any:
@@ -421,7 +450,6 @@ def grab_db_data_tickers_never_updated_with_has_dividends(connection) -> any:
   for item in retrieved_db_data:
     if item[1] == None:
       tickers_to_update.append(item[0])
-  print(tickers_to_update)
   return tickers_to_update
 
 def grab_db_data_tickers_previously_updated_with_has_dividends(connection) -> any:
@@ -432,21 +460,17 @@ def grab_db_data_tickers_previously_updated_with_has_dividends(connection) -> an
   retrieved_db_data = cur.fetchall()
   cur.close()
   tickers_to_update = []
-  print(retrieved_db_data)
   for item in retrieved_db_data:
     if item[1] == None:
       tickers_to_update.append(item[0])
-  print(tickers_to_update)
   return tickers_to_update
 
 def get_consistent_years_dividend_growth(annual_dividends) -> int:
-  print("In consistent years")
-  print(annual_dividends)
-  print(len(annual_dividends))
   list_len = len(annual_dividends)
-  print(list_len == 0)
   if list_len == 0:
-    return 0
+    return
+  if list_len == 1:
+    annual_dividends = [annual_dividends]
   else:
     count = 0
     div_being_checked = annual_dividends[1]["total_annual_dividend"]
@@ -485,42 +509,37 @@ def determine_if_never_updated_ticker_has_dividends_on_annual_financials():
   print(f"Completed daily task 2 of 4 'determine_if_ticker_has_dividends_financials' @ {datetime.datetime.now()}")
 
 
-determine_if_never_updated_ticker_has_dividends_on_annual_financials()
+# determine_if_never_updated_ticker_has_dividends_on_annual_financials()
 
 @repeat(every().day.at('13:41:25'))
 def update_individual_dividend_stock_data():
   print(f"Doing grab has_div no data task at: {datetime.datetime.now()}")
   new_tickers_to_update = grab_db_data_tickers_never_updated_with_has_dividends(connection) 
-  for ticker in new_tickers_to_update:
-  
+  print(new_tickers_to_update)
+  tickers = new_tickers_to_update[:80]
+  # tickers = ['UGI'] 
+
+# failed tickers: NHHS
+  # for ticker in new_tickers_to_update:
+  for ticker in tickers:
     print(f"getting single stock detail of {ticker} @ {datetime.datetime.now()}")
     # 1 FMP API call per stock
-    historic_dividends_returned = get_historic_dividends(ticker)
-    # ------------ BASIC FINANCIAL CALL UPDATES --------------------
-    # get basic financials and update to db 52 week high/low and beta
-    get_company_profiles_and_update_db(ticker)
-    get_basic_financials_and_update_db(ticker)
-    # -------------- ANNUAL FINANCIAL STATEMENT CALCS ----------------
-    # no api calls required
-    calculate_payout_ratios_and_update_db(ticker)
+    historic_dividends = get_historic_dividends_from_fmp(ticker) # 1 FMP API call
+    if historic_dividends == None: # Although dividends in Annual Statement, sometimes FMP does not have dividend history
+      update_db_dividend_payer_false(False, ticker)
+      continue
+    else:  
+      time.sleep(3) # Delay to prevent FMP API overload
+      update_db_with_historic_dividends_and_related_calculations(historic_dividends, ticker)
+      get_company_profiles_and_update_db(ticker) # 1 finnhub API call
+      get_basic_financials_hi_low_beta_and_update_db(ticker) # 1 finnhub API call
+      calculate_payout_ratios_and_update_db(ticker) # No API call
+      print("Ticker Done!")
+  print("DONE - INDY UPDATE")
 
 
-    time.sleep(3)
-    print(f"FINISHED single stock detail of {ticker} @ {datetime.datetime.now()}")
-    return
 
-
-
-    # api_call_counts = single_ticker_api_and_update_process(ticker)
-
-
-  previous_tickers_to_update = grab_db_data_tickers_previously_updated_with_has_dividends(connection) 
-  # list = [1,2,3,4,5,6,7]
-  # for item in list:
-  #     print(f"Item {item} at: {datetime.datetime.now()}")
-  #     time.sleep(5) # sleep in seconds
-
-
+update_individual_dividend_stock_data()
 
 # schedule.every(5).seconds.do(task)
 # schedule.every().day.at('10:23').do(task) # 15:15 for 3:15 pm
