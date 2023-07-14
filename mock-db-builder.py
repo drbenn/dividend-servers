@@ -179,7 +179,7 @@ def get_never_updated_annual_financials_and_determine_if_dividends(db_stocks) ->
     annual_financials = get_annual_financials(ticker)
     is_dividend_payer = determine_if_dividend_payer_from_annual_financials(annual_financials)
     print(f"{ticker} is a dividend payer?: {is_dividend_payer}")
-    update_db_with_annual_financials(ticker, is_dividend_payer, annual_financials)
+    update_db_with_annual_financials(connection, ticker, is_dividend_payer, annual_financials)
     finnhub_api_fetches += 1
     if is_dividend_payer:
       stocks_with_dividends_to_get_more_detail.append(ticker)
@@ -205,7 +205,7 @@ def get_previously_updated_annual_financials_and_for_review(db_stocks) -> any:
     annual_financials = get_annual_financials(ticker)
     is_dividend_payer = determine_if_dividend_payer_from_annual_financials(annual_financials)
     print(f"{ticker} is a dividend payer?: {is_dividend_payer}")
-    update_db_with_annual_financials(ticker, is_dividend_payer, annual_financials)
+    update_db_with_annual_financials(connection, ticker, is_dividend_payer, annual_financials)
     finnhub_api_fetches += 1
     if is_dividend_payer:
       stocks_with_dividends_to_get_more_detail.append(ticker)
@@ -233,7 +233,7 @@ def determine_if_dividend_payer_from_annual_financials(annual_financials) -> boo
   return has_dividend
  
    
-def update_db_with_annual_financials(ticker, is_dividend_payer, annual_financials) -> any:
+def update_db_with_annual_financials(connection, ticker, is_dividend_payer, annual_financials) -> any:
   json_financials = json.dumps(annual_financials)
   if is_dividend_payer == True:
     query = "UPDATE stocks SET historic_annual_financials = %s, has_dividend = %s WHERE ticker = %s"
@@ -299,7 +299,7 @@ def get_historic_dividends(connection, ticker) -> any:
       with urlopen(url, timeout=10) as response:
         data = response.read().decode("utf-8")
         historic_dividends = json.loads(data) # json.loads converts json string to python dictionary
-        update_db_with_historic_dividends_and_related_calculations(historic_dividends, ticker)
+        update_db_with_historic_dividends_and_related_calculations(connection, historic_dividends, ticker)
         print(f"Historic FMP call successful for ticker {ticker}")
         return True
     except HTTPError as error:
@@ -315,7 +315,7 @@ def get_historic_dividends(connection, ticker) -> any:
       return False
 
 
-def update_db_with_historic_dividends_and_related_calculations(historic_dividends, ticker) -> any:
+def update_db_with_historic_dividends_and_related_calculations(connection, historic_dividends, ticker) -> any:
     annual_dividends = combine_dividends_into_annual_dividends(historic_dividends)
     years_dividend_growth = get_consistent_years_dividend_growth(annual_dividends)
     dividend_payment_months_and_count = get_payment_months_and_count(historic_dividends)

@@ -1,3 +1,11 @@
+import datetime
+import calendar
+
+import db_calculations
+import db_calls
+import db_fin_calls
+
+
 def get_consistent_years_dividend_growth(annual_dividends) -> int:
   list_len = len(annual_dividends)
   if list_len == 0:
@@ -17,8 +25,6 @@ def get_consistent_years_dividend_growth(annual_dividends) -> int:
         break
     return int(count)
   
-
-
 
 def build_annual_payout_ratios(annual_financials, annual_dividends):
   annual_payout_ratios = []
@@ -40,7 +46,6 @@ def build_annual_payout_ratios(annual_financials, annual_dividends):
   return annual_payout_ratios
 
 
-
 def calculate_x_year_cagr(annual_dividends, years) -> float:
   if len(annual_dividends) >= years + 2:
     beginning_balance = float(annual_dividends[years + 1]["total_annual_dividend"])
@@ -50,6 +55,7 @@ def calculate_x_year_cagr(annual_dividends, years) -> float:
   else:
     return 0
   
+
 def combine_dividends_into_annual_dividends(historic_dividends, payment_date_string) -> list[object]:
   historic_dividends = historic_dividends["historical"]
   annual_dividends = []
@@ -74,3 +80,52 @@ def combine_dividends_into_annual_dividends(historic_dividends, payment_date_str
       linear_growth_rate = round(float((new_dividend - old_dividend) / old_dividend ), 4 )
       annual_dividends[index]["yoy_linear_growth_rate"] = linear_growth_rate 
   return annual_dividends
+
+
+def get_payment_months_and_count(historic_dividends):
+  latest_dividend = historic_dividends["historical"][0]
+  latest_ex_dividend_date = latest_dividend["date"]
+  latest_ex_dividend_date_as_date = datetime.datetime.strptime(latest_ex_dividend_date, '%Y-%m-%d')
+  one_year_with_wiggle_room_for_weekends = datetime.timedelta(days=360)
+  one_year_ago = latest_ex_dividend_date_as_date - one_year_with_wiggle_room_for_weekends
+  annual_dividend_payment_count = 0
+  dividend_payment_months = []
+
+  for item in historic_dividends["historical"]:
+    item_date = datetime.datetime.strptime(item["date"], '%Y-%m-%d')
+    item_payment_month_number = item_date.month
+    item_payment_month = calendar.month_abbr[item_payment_month_number]
+    if item_date > one_year_ago:
+      annual_dividend_payment_count +=1
+      dividend_payment_months.append(item_payment_month)
+
+  return {
+    "ttm_dividend_payment_count": annual_dividend_payment_count,
+    "dividend_payment_months": dividend_payment_months
+}
+
+
+def calculate_payout_ratios_and_update_db(connection, ticker)  -> str:
+  data = db_calls.get_historic_dividends_and_financials_from_db(connection, ticker)
+  annual_dividends = data[0][0]
+  annual_financials = data[0][1]["data"]
+  annual_payout_ratios = db_calculations.build_annual_payout_ratios(annual_financials, annual_dividends)
+  db_calls.update_db_with_payout_ratio_dictionary(connection, annual_payout_ratios, ticker)
+  return
+
+
+def calculate_current_dividend_yield(ticker, historic_dividends, dividend_payment_months_and_counts) -> float:
+  current_quote = db_fin_calls.get_current_price_quote(ticker)
+  current_price = current_quote["c"]
+  if current_price == 0:
+     return 0
+  else:
+    payments_per_year = dividend_payment_months_and_counts["ttm_dividend_payment_count"]
+    ttm_dividends = 0
+    for item in historic_dividends["historical"][:payments_per_year]:
+      if item["dividend"] == None:
+        ttm_dividends += 0
+      else:
+        ttm_dividends += float(item["dividend"])
+    current_dividend_yield = round(float((ttm_dividends / current_price)), 4)
+    return current_dividend_yield

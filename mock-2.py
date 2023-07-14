@@ -9,7 +9,7 @@ import schedule
 import json
 import finnhub
 import helper
-from api_keys import FINNHUB_API_KEY, FMP_API_KEY
+from grizzly_db_builder.api_keys import FINNHUB_API_KEY, FMP_API_KEY
 import threading # needed or else the sleep function on schedule will block all other code(ie, the server from running concurrently)
 # finnhub_client = finnhub.Client(api_key=FINNHUB_API_KEY)
 import multiprocessing
