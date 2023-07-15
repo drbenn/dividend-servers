@@ -53,7 +53,8 @@ pip install psycopg2
 # 	username VARCHAR ( 50 ) PRIMARY KEY,
 # 	email VARCHAR ( 50 ) ,
 # 	password VARCHAR ( 50 ),
-# 	join_date TIMESTAMP WITH TIME ZONE
+# 	join_date TIMESTAMP WITH TIME ZONE,
+#   portfolios JSONB
 # );
 
 # CREATE TABLE grizzly_portfolios (

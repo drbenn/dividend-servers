@@ -115,29 +115,30 @@ def update_db_with_historic_dividends_and_related_calculations(connection, histo
 # ---------------------  MAIN OPERATIONS/TASKS SCHEDULING   --------------------
 # ------------------------------------------------------------------------------
 
-@repeat(every().day.at('11:07:00'))
-def update_full_us_stock_listing():
-  print(f"Running task 1 of 3 'update_full_us_stock_listing' @ {datetime.datetime.now()}")
-  all_current_us_tickers = db_fin_calls.get_all_us_tickers()
-  all_db_data = db_calls.grab_all_db_data(connection)
-  tickers_to_add_to_db = db_aux.find_tickers_to_add(all_current_us_tickers, all_db_data)
-  db_calls.insert_new_tickers_to_db(connection, tickers_to_add_to_db, all_current_us_tickers)
-  db_calls.add_event_to_run_log(connection, "Daily stock listing verified and updated")
-  print(f"Completed task 1 of 3 'update_full_us_stock_listing' @ {datetime.datetime.now()}")
+# @repeat(every().day.at('11:07:00'))
+# def update_full_us_stock_listing():
+#   print(f"Running task 1 of 3 'update_full_us_stock_listing' @ {datetime.datetime.now()}")
+#   all_current_us_tickers = db_fin_calls.get_all_us_tickers()
+#   all_db_data = db_calls.grab_all_db_data(connection)
+#   tickers_to_add_to_db = db_aux.find_tickers_to_add(all_current_us_tickers, all_db_data)
+#   db_calls.insert_new_tickers_to_db(connection, tickers_to_add_to_db, all_current_us_tickers)
+#   db_calls.add_event_to_run_log(connection, "Daily stock listing verified and updated")
+#   print(f"Completed task 1 of 3 'update_full_us_stock_listing' @ {datetime.datetime.now()}")
 
 
-@repeat(every().day.at('20:33:40'))
-def determine_if_never_updated_ticker_has_dividends_on_annual_financials():
-  print(f"Running task 2 of 3 'determine_if_ticker_has_dividends_financials' @ {datetime.datetime.now()}")
-  all_db_data = db_calls.grab_all_db_data(connection)
-  get_never_updated_annual_financials_and_determine_if_dividends(all_db_data)
-  db_calls.add_event_to_run_log(connection, "Daily stock_has_dividened updated")
-  print(f"Completed task 2 of 3 'determine_if_ticker_has_dividends_financials' @ {datetime.datetime.now()}")
+# @repeat(every().day.at('20:33:40'))
+# def determine_if_never_updated_ticker_has_dividends_on_annual_financials():
+#   print(f"Running task 2 of 3 'determine_if_ticker_has_dividends_financials' @ {datetime.datetime.now()}")
+#   all_db_data = db_calls.grab_all_db_data(connection)
+#   get_never_updated_annual_financials_and_determine_if_dividends(all_db_data)
+#   db_calls.add_event_to_run_log(connection, "Daily stock_has_dividened updated")
+#   print(f"Completed task 2 of 3 'determine_if_ticker_has_dividends_financials' @ {datetime.datetime.now()}")
 
 
-@repeat(every().day.at('13:41:25'))
+# @repeat(every().day.at('13:41:25'))
 def update_individual_dividend_stock_data():
   new_tickers_to_update = db_calls.grab_db_data_tickers_never_updated_with_has_dividends(connection) 
+  print("New tickers to update")
   print(new_tickers_to_update)
   tickers = new_tickers_to_update[:250]
 
