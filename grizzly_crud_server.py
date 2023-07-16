@@ -150,114 +150,33 @@ def login_user_handler() -> any:
     return 'User registered successfully', 200
   
 
-def http_query_to_db_query_tickers(args):
+def http_query_to_db_query_tickers(tickers):
   print("in query_to_array")
-  tickers_dict = args.to_dict()
-  ticker_array = tickers_dict["tickers"].split(',')
-  db_query = ''
-  for index, item in enumerate(ticker_array):
-    if index == 0:
-      db_query += f"ticker = '{item}'"
-    else:
-      db_query += f" OR ticker = '{item}'"
-  print(f"db QUERY = {db_query}")
-  return db_query
-
-def convert_query_results_to_json_string(results):
-  # print("TICKER DAYA")
-  # print(results)
-  # print(type(results))
-  # json_string = json.dumps(results, default=str)
-  # print(json_string)
-  # # json = json.dumps(ticker_data)
-  # # data.append(ticker_data)
-  # print("JOSN")
-  # print(json)
-  dummy = {"name": "billy", "occupation": "grasshole"}
-  # return json_string
-  print("dummy")
-  string = jsonify(dummy)
-  print(string)
-  return string
-  
-  # print(ticker_data)
-  # print(ticker_data[2])
-  # print(type(ticker_data))
-  # print(ticker_data[2])
-  # return json
-
-
-
-@app.route("/members")
-def members():
-  return {"members": ["Member1", "Member2"]}
-
-
-
+  if len(tickers) > 1:
+    print(tickers)
+    db_query = ''
+    for index, item in enumerate(tickers):
+      if index == 0:
+        db_query += f"ticker = '{item}'"
+      else:
+        db_query += f" OR ticker = '{item}'"
+    print(f"db QUERY = {db_query}")
+    return db_query
+  else:
+    return f"ticker = '{tickers[0]}'"
 
 
 # @app.route("/portfoliodata", methods=["POST", "GET"])
-@app.route("/portfoliodata")
+@app.route("/dataquery", methods=["POST", "GET"])
 def get_portfolio_tickers() -> any:
-  # tickers = http_query_to_db_query_tickers(request.args)
-  # data = []
-
-  # for ticker in tickers:
-  #   print(f"ticker being requested - {ticker}")
-    # query =  f"SELECT ticker, name, equity_type, industry, website, logo, dividend_yield, years_dividend_growth, growth_all_years_of_history, payout_ratios, three_year_cagr, five_year_cagr, year_price_high, year_price_low, beta, backup_stock_price, backup_stock_price_date_saved, dividend_payment_months_and_count, annual_dividends from grizzly_stocks WHERE ticker = '{ticker}'"
-  # query =  f"SELECT ticker, name, equity_type, industry, website, logo, dividend_yield, years_dividend_growth, growth_all_years_of_history, three_year_cagr, five_year_cagr, year_price_high, year_price_low, beta, backup_stock_price from grizzly_stocks WHERE {tickers}"
+  tickers_submitted = request.get_json()
+  print(f"tickers submitted: {tickers_submitted}")
+  tickers_query = http_query_to_db_query_tickers(tickers_submitted)
   # query =  f"SELECT ticker, name, equity_type, industry, website, logo, dividend_yield from grizzly_stocks WHERE {tickers}"
-  # print("Query")
-  # print(query)
-  # ticker_data = db_fetch(query)
-  # ticker_data = 5
-  # json_string = convert_query_results_to_json_string(ticker_data)
-  dummy = {"name": "billy", "occupation": "grasshole"}
-  print("dummy")
-  # string = jsonify(dummy)
-  # print(string)
-  # return string
-  # return json_string, 200
+  query =  f"SELECT ticker, name, equity_type, industry, website, logo, dividend_yield, years_dividend_growth, growth_all_years_of_history, payout_ratios, three_year_cagr, five_year_cagr, year_price_high, year_price_low, beta, backup_stock_price, backup_stock_price_date_saved, dividend_payment_months_and_count, annual_dividends from grizzly_stocks WHERE {tickers_query}"
+  ticker_data = db_fetch(query)
+  return ticker_data
 
-  # retrieved_db_data = db_fetch(f"SELECT * from grizzly_users where username = '{submitted_username}' AND password = '{submitted_password}'")  
-
-  # SELECT ticker, name, equity_type, industry, website, logo, dividend_yield, years_dividend_growth, growth_all_years_of_history, payout_ratios, three_year_cagr, five_year_cagr, year_price_high, year_price_low, beta, backup_stock_price, backup_stock_price_date_saved, dividend_payment_months_and_count, annual_dividends from grizzly_stocks WHERE has_dividend = true
-
-  
-# @app.route("/login", methods=['GET'])
-# def insert_new_user() -> any:
-#   user_data = request.get_json()
-#   submitted_username = user_data["username"]
-#   submitted_email = user_data["email"]
-#   submitted_password = user_data["password"]
-#   # Check if username or password is unique
-#   cur = connection.cursor()
-#   query = "SELECT username, email FROM grizzly_users"
-#   cur.execute(query)
-#   retrieved_db_data = cur.fetchall()
-#   is_username_and_password_unique = True
-#   error_message = None
-#   for user in retrieved_db_data:
-#     db_username = user[grizzly_users_db_schema["username"]]
-#     db_email = user[grizzly_users_db_schema["email"]]
-#     if submitted_username == db_username:
-#       print('username already in use')
-#       is_username_and_password_unique = False
-#       error_message = 'Invalid request. Username already exists.'
-#     elif submitted_email == db_email:
-#       print('email already in use')
-#       is_username_and_password_unique = False
-#       error_message = 'Invalid request. Email already exists.'
-
-#   if is_username_and_password_unique:
-#     cur = connection.cursor()
-#     cur.execute("INSERT INTO grizzly_users (username, email, password, join_date) values (%s, %s, %s, %s)", (submitted_username, submitted_email, submitted_password, dt.now() ))
-#     connection.commit()
-#     cur.close()
-#     return 'User registered successfully', 200
-#   else:
-#     cur.close()
-#     return error_message, 400
   
 
 if __name__ == "__main__": app.run()
