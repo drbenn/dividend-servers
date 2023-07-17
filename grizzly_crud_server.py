@@ -40,6 +40,28 @@ grizzly_users_db_schema = {
    "join_date": 3
 }
 
+data_schema = {
+  "ticker": 0,
+  "name": 1,
+  "type": 2,
+  "industry": 3,
+  "website": 4,
+  "logo": 5,
+  "dividend_yield": 6,
+  "years_dividend_growth": 7, 
+  "growth_all_years_of_history": 8, 
+  "payout_ratios": 9,
+  "three_year_cagr": 10, 
+  "five_year_cagr": 11, 
+  "year_price_high": 12,
+  "year_price_low": 13,
+  "beta": 14,
+  "backup_stock_price": 15,
+  "backup_stock_price_date_saved": 16,
+  "dividend_payment_months_and_count": 17,
+  "annual_dividend": 18
+}
+
 #cursor
 cur = connection.cursor()
 
@@ -81,8 +103,8 @@ def db_fetch(query):
   cur.execute(query)
   retrieved_db_data = cur.fetchall()
   cur.close()
-  print("fetch returned")
-  print(retrieved_db_data)
+  # print("fetch returned")
+  # print(retrieved_db_data)
   return retrieved_db_data
 
 def register_error_handler(retrieved_db_data, submitted_username, submitted_email):
@@ -151,31 +173,53 @@ def login_user_handler() -> any:
   
 
 def http_query_to_db_query_tickers(tickers):
-  print("in query_to_array")
   if len(tickers) > 1:
-    print(tickers)
     db_query = ''
     for index, item in enumerate(tickers):
       if index == 0:
         db_query += f"ticker = '{item}'"
       else:
         db_query += f" OR ticker = '{item}'"
-    print(f"db QUERY = {db_query}")
     return db_query
   else:
     return f"ticker = '{tickers[0]}'"
 
+def data_transform_to_dict(data):
+  data_dict_array = []
+  for item in data:
+    data_dict = {
+    "ticker": item[data_schema["ticker"]],
+    "name": item[data_schema["name"]],
+    "type": item[data_schema["type"]],
+    "industry": item[data_schema["industry"]],
+    "website": item[data_schema["website"]],
+    "logo": item[data_schema["logo"]],
+    "dividend_yield": item[data_schema["dividend_yield"]],
+    "years_dividend_growth": item[data_schema["years_dividend_growth"]], 
+    "growth_all_years_of_history": item[data_schema["growth_all_years_of_history"]], 
+    "payout_ratios": item[data_schema["payout_ratios"]],
+    "three_year_cagr": item[data_schema["three_year_cagr"]], 
+    "five_year_cagr": item[data_schema["five_year_cagr"]], 
+    "year_price_high": item[data_schema["year_price_high"]],
+    "year_price_low": item[data_schema["year_price_low"]],
+    "beta": item[data_schema["beta"]],
+    "backup_stock_price": item[data_schema["backup_stock_price"]],
+    "backup_stock_price_date_saved": item[data_schema["backup_stock_price_date_saved"]],
+    "dividend_payment_months_and_count": item[data_schema["dividend_payment_months_and_count"]],
+    "annual_dividend": item[data_schema["annual_dividend"]]
+    }
+    data_dict_array.append(data_dict)
+  return data_dict_array
 
-# @app.route("/portfoliodata", methods=["POST", "GET"])
 @app.route("/dataquery", methods=["POST", "GET"])
 def get_portfolio_tickers() -> any:
   tickers_submitted = request.get_json()
   print(f"tickers submitted: {tickers_submitted}")
   tickers_query = http_query_to_db_query_tickers(tickers_submitted)
-  # query =  f"SELECT ticker, name, equity_type, industry, website, logo, dividend_yield from grizzly_stocks WHERE {tickers}"
   query =  f"SELECT ticker, name, equity_type, industry, website, logo, dividend_yield, years_dividend_growth, growth_all_years_of_history, payout_ratios, three_year_cagr, five_year_cagr, year_price_high, year_price_low, beta, backup_stock_price, backup_stock_price_date_saved, dividend_payment_months_and_count, annual_dividends from grizzly_stocks WHERE {tickers_query}"
   ticker_data = db_fetch(query)
-  return ticker_data
+  data_dict = data_transform_to_dict(ticker_data)
+  return data_dict
 
   
 
