@@ -1,0 +1,5 @@
+{
+  "python.analysis.extraPaths": [
+    "./grizzly_db_builder"
+  ]
+}
