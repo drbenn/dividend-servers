@@ -221,6 +221,13 @@ def get_portfolio_tickers() -> any:
   data_dict = data_transform_to_dict(ticker_data)
   return data_dict
 
+@app.route("/searchtickers", methods=["GET"])
+def get_search_tickers() -> any:
+  query = "SELECT ticker, name from grizzly_stocks where has_dividend = 'true' AND industry IS NOT NULL AND dividend_yield IS NOT NULL AND years_dividend_growth IS NOT NULL AND payout_ratios IS NOT NULL AND three_year_cagr IS NOT NULL  AND five_year_cagr IS NOT NULL AND annual_dividends IS NOT NULL"
+  ticker_data = db_fetch(query)
+  data_dict = data_transform_to_dict(ticker_data)
+  return data_dict
+
   
 
 if __name__ == "__main__": app.run()

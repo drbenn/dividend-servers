@@ -24,14 +24,7 @@ def get_all_us_tickers() -> any:
   return us_stocks
 
 
-def get_annual_financials(ticker) -> list[object]:
-  print(f"calling finnhub for annual financials and testing for dividend of {ticker} @ {datetime.datetime.now()}")
-  try:
-    annual_financials = finnhub_client.financials_reported(symbol=ticker, freq='annual')
-    print(annual_financials)
-    return annual_financials
-  except Exception:
-    print("Annual Financial call failed")
+
     
 
 
@@ -86,11 +79,54 @@ def get_current_price_quote(ticker):
   quote = finnhub_client.quote(ticker)
   return quote
 
-TICKER = ""
+def get_annual_financials(ticker) -> list[object]:
+  print(f"calling finnhub for annual financials and testing for dividend of {ticker} @ {datetime.datetime.now()}")
+  try:
+    annual_financials = finnhub_client.financials_reported(symbol=ticker, freq='annual')
+    print(annual_financials["data"][0]["report"]["cf"])
+    return annual_financials
+  except Exception:
+    print("Annual Financial call failed")
 
-get_current_price_quote(TICKER)
-get_all_us_tickers()
-get_company_profiles_and_update_db(TICKER)
-get_historic_dividends_from_fmp(TICKER)
-get_basic_financials_hi_low_beta_and_update_db(TICKER)
-get_annual_financials(TICKER)
+def determine_if_dividend_payer_from_annual_financials(annual_financials) -> bool:
+  print("IN DIV CHECK")
+  if annual_financials == None or annual_financials["data"] == None or len(annual_financials["data"]) == 0:
+    print("FALSE FOR HAS_DIVIDEND")
+    return False
+  elif len(annual_financials["data"]) > 0:
+    print("ticker has data")
+    print(annual_financials["data"][0]["report"]["cf"])
+    cashflow_statement = annual_financials["data"][0]["report"]["cf"]
+    lengthOfCF = len(cashflow_statement)
+    print(lengthOfCF)
+    for item in cashflow_statement:
+      print(type(item))
+      if type(item) == int:
+        if item["concept"] == "us-gaap_PaymentsOfDividendsCommonStock" or item["concept"] == "PaymentsOfDividendsCommonStock" or item["concept"] == "us-gaap_PaymentsOfOrdinaryDividends" or item["concept"] == "us-gaap_PaymentsOfDividends" or item["concept"] == "PaymentsOfDistributionsToAffiliates":
+          print("RETURNING TRUE")
+          return True
+      elif type(item) == str:
+        if item == "PaymentsOfDividendsCommonStock":
+          print("RETURNING TRUE2222222")
+          return True
+  else:
+    return False
+
+
+missing = ["T", "JNJ", "PFE","ABBV","GILD","BMY", "VZ", "CSCO", "KO", "MMM", "CVS","UPS", "C","KMI", "O", "WBA", "MDT", "GS","KHC", "K", "DUK", "PM","PSEC", "CHD", "CAT", "BRO", "ESS", "DGRO", "SCHD"]
+
+# PSEC, DGRO FAILED
+# TICKER = missing[28]
+TICKER = 'LSI'
+
+
+# get_current_price_quote(TICKER)
+# get_all_us_tickers()
+# get_company_profiles_and_update_db(TICKER)
+# get_historic_dividends_from_fmp(TICKER)
+# get_basic_financials_hi_low_beta_and_update_db(TICKER)
+annual_financials = get_annual_financials(TICKER)
+
+
+is_dividend_payer = determine_if_dividend_payer_from_annual_financials(annual_financials)
+print(TICKER)

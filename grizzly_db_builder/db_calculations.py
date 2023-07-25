@@ -26,24 +26,30 @@ def get_consistent_years_dividend_growth(annual_dividends) -> int:
     return int(count)
   
 
-def build_annual_payout_ratios(annual_financials, annual_dividends):
+def build_annual_payout_ratios(annual_financials, annual_dividends, ticker):
   annual_payout_ratios = []
-  print(annual_dividends)
-  for annual in annual_financials:
-    if any(dictionary.get("year") == annual["year"] for dictionary in annual_dividends):
-      annual_dividend_dictionary = None
-      for dividend_dict in annual_dividends:
-        if dividend_dict["year"] == annual["year"]:
-          annual_dividend_dictionary = dividend_dict
+  if "data" not in annual_financials:
+    return[]
+  else:
+    for annual in annual_financials["data"]:
+      if any(dictionary.get("year") == annual["year"] for dictionary in annual_dividends):
+        annual_dividend_dictionary = None
+        for dividend_dict in annual_dividends:
+          if dividend_dict["year"] == annual["year"]:
+            annual_dividend_dictionary = dividend_dict
 
-      annual_dividend_paid = float(annual_dividend_dictionary["total_annual_dividend"])
-      cash_flow_statement = annual["report"]["cf"]
-      for item in cash_flow_statement:
-        if item["concept"] == "us-gaap_NetIncomeLoss" or item["concept"] == "us-gaap_ProfitLoss":
-          netIncomeLoss = float(item["value"])
-          payout_ratio = annual_dividend_paid / netIncomeLoss
-          annual_payout_ratios.append({ "year": annual["year"], "payout_ratio": payout_ratio, "net_income_loss": item["value"]})
-  return annual_payout_ratios
+        annual_dividend_paid = float(annual_dividend_dictionary["total_annual_dividend"])
+        income_statement = annual["report"]["ic"]
+        eps_for_year = None
+
+        for item in income_statement:
+          if item["concept"] == "us-gaap_EarningsPerShareBasic":
+            eps_for_year = float(item["value"])
+
+        if annual_dividend_paid and eps_for_year:
+          payout_ratio = round((annual_dividend_paid / eps_for_year) , 6)
+          annual_payout_ratios.append({ "year": annual["year"], "payout_ratio": payout_ratio, "eps": eps_for_year}) 
+    return annual_payout_ratios
 
 
 def calculate_x_year_cagr(annual_dividends, years) -> float:
@@ -109,7 +115,7 @@ def calculate_payout_ratios_and_update_db(connection, ticker)  -> str:
   data = db_calls.get_historic_dividends_and_financials_from_db(connection, ticker)
   annual_dividends = data[0][0]
   annual_financials = data[0][1]["data"]
-  annual_payout_ratios = db_calculations.build_annual_payout_ratios(annual_financials, annual_dividends)
+  annual_payout_ratios = db_calculations.build_annual_payout_ratios(annual_financials, annual_dividends, ticker)
   db_calls.update_db_with_payout_ratio_dictionary(connection, annual_payout_ratios, ticker)
   return
 

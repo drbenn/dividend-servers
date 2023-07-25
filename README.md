@@ -12,6 +12,7 @@ pip install psycopg2
 <!-- https://site.financialmodelingprep.com/developer/docs/ --> - up to 250 requests/day
 <!-- https://stackabuse.com/get-request-query-parameters-with-flask/ -->
 
+
 # https://stackoverflow.com/questions/49723988/alphavantage-list-of-all-tickers-on-an-exchange
 # https://github.com/rreichel3/US-Stock-Symbols
 # https://finnhub.io/

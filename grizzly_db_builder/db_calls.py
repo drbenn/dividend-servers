@@ -42,12 +42,34 @@ def grab_db_data_tickers_never_updated_with_has_dividends(connection) -> any:
       tickers_to_update.append(item[0])
   return tickers_to_update
 
+def grab_db_data_tickers_where_hasdividend_and_annualfinancials_but_no_calculations(connection) -> any:
+  cur = connection.cursor()
+  query = "SELECT ticker, last_updated FROM grizzly_stocks WHERE has_dividend = True AND historic_annual_financials IS NOT NULL AND payout_ratios IS NULL"
+  cur.execute(query)
+  retrieved_db_data = cur.fetchall()
+  cur.close()
+  tickers_to_update = []
+  for item in retrieved_db_data:
+    if item[1] == None:
+      tickers_to_update.append(item[0])
+  return tickers_to_update
+
+def grab_db_data_tickers_w_hasdiv_hasannual_and_hasdivhistory(connection) -> any:
+  query = "SELECT ticker,annual_dividends, historic_annual_financials FROM grizzly_stocks WHERE has_dividend = true AND annual_dividends IS NOT NULL AND historic_annual_financials IS NOT NULL"
+  # query = "SELECT ticker,beta FROM grizzly_stocks WHERE has_dividend = true AND annual_dividends IS NOT NULL AND historic_annual_financials IS NOT NULL"
+  cur = connection.cursor()
+  cur.execute(query)
+  data = cur.fetchall()
+  cur.close()
+  return data
+
+
 
 def update_db_with_annual_financials(connection, ticker, is_dividend_payer, annual_financials) -> any:
   if is_dividend_payer == True:
     update_db_dividend_payer_true(connection, annual_financials, is_dividend_payer, ticker)
   elif is_dividend_payer == False:
-    update_db_dividend_payer_false(is_dividend_payer, ticker)
+    update_db_dividend_payer_false(connection, is_dividend_payer, ticker)
 
 
 def update_db_dividend_payer_true(connection, annual_financials, is_dividend_payer, ticker):
