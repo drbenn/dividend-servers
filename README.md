@@ -4,13 +4,16 @@ https://www.youtube.com/watch?v=qfYzCdkVwig
 pip install Flask-MySQLdb
 pip install -U flask-cors
 pip install schedule
-pip install psycopg2
+pip install psycopg2  // dont install this, install psycopg2-binary
+pip install psycopg2-binary
 
 
 <!-- https://finnhub.io/ -->
 <!-- https://www.alphavantage.co/documentation/ --> - up to 5 API requests per minute and 500 requests per day
 <!-- https://site.financialmodelingprep.com/developer/docs/ --> - up to 250 requests/day
 <!-- https://stackabuse.com/get-request-query-parameters-with-flask/ -->
+https://pysql.tecladocode.com/section05/lectures/04_psycopg2_vs_psycopg2-binary/
+https://stackoverflow.com/questions/63817166/how-to-install-psycopg2-on-namecheap-cpanel
 
 
 # https://stackoverflow.com/questions/49723988/alphavantage-list-of-all-tickers-on-an-exchange

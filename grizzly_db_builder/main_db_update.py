@@ -233,34 +233,67 @@ def get_all_db_tickers_no_true_no_payout_ratios(db_stocks) -> any:
 # revise_individual_dividend_stock_data()
 
 
-def update_individual_dividend_stock_data_part_deaux():
-  new_tickers_to_update = db_calls.grab_db_data_tickers_where_hasdividend_and_annualfinancials_but_no_calculations(connection) 
-  print("New tickers to update")
-  print(new_tickers_to_update)
-  # tickers = new_tickers_to_update[5:]
-  tickers = new_tickers_to_update
-  count = 1
-  lgth = len(new_tickers_to_update)
+# def update_individual_dividend_stock_data_part_deaux():
+#   new_tickers_to_update = db_calls.grab_db_data_tickers_where_hasdividend_and_annualfinancials_but_no_calculations(connection) 
+#   print("New tickers to update")
+#   print(new_tickers_to_update)
+#   # tickers = new_tickers_to_update[5:]
+#   tickers = new_tickers_to_update
+#   count = 1
+#   lgth = len(new_tickers_to_update)
 
-  for ticker in tickers:
-    print(f"Running task 3 of 3 update single stock data of {ticker} @ {datetime.datetime.now()}")
-    historic_dividends = db_fin_calls.get_historic_dividends_from_fmp(connection, ticker)
-    if historic_dividends == None or historic_dividends["historical"] == [] or len(historic_dividends["historical"]) == 0: # Although dividends in Annual Statement, sometimes FMP does not have dividend history
-      db_calls.update_db_dividend_payer_false(connection, False, ticker)
-      return
-    else:  
-      time.sleep(3) # Delay to prevent FMP API overload
-      update_db_with_historic_dividends_and_related_calculations(connection, historic_dividends, ticker)
-      db_fin_calls.get_company_profiles_and_update_db(connection, ticker) # 1 finnhub API call
-      db_fin_calls.get_basic_financials_hi_low_beta_and_update_db(connection, ticker) # 1 finnhub API call
-      db_calculations.calculate_payout_ratios_and_update_db(connection, ticker) # No API call
-      db_calls.add_event_to_run_log(connection, f"{ticker} individual stock information updated")
-      print(f"{count}/{lgth} - Completed task 3 of 3 update single stock data of {ticker} @ {datetime.datetime.now()}")
-      count =+ 1
+#   for ticker in tickers:
+#     print(f"Running task 3 of 3 update single stock data of {ticker} @ {datetime.datetime.now()}")
+#     historic_dividends = db_fin_calls.get_historic_dividends_from_fmp(connection, ticker)
+#     if historic_dividends == None or historic_dividends["historical"] == [] or len(historic_dividends["historical"]) == 0: # Although dividends in Annual Statement, sometimes FMP does not have dividend history
+#       db_calls.update_db_dividend_payer_false(connection, False, ticker)
+#       print("In False bc fmp retrived but no actual content in dividend history")
+#       continue
+#     else:  
+#       time.sleep(3) # Delay to prevent FMP API overload
+#       update_db_with_historic_dividends_and_related_calculations(connection, historic_dividends, ticker)
+#       db_fin_calls.get_company_profiles_and_update_db(connection, ticker) # 1 finnhub API call
+#       db_fin_calls.get_basic_financials_hi_low_beta_and_update_db(connection, ticker) # 1 finnhub API call
+#       db_calculations.calculate_payout_ratios_and_update_db(connection, ticker) # No API call
+#       db_calls.add_event_to_run_log(connection, f"{ticker} individual stock information updated")
+#       print(f"{count}/{lgth} - Completed task 3 of 3 update single stock data of {ticker} @ {datetime.datetime.now()}")
+#       count =+ 1
 
 
-update_individual_dividend_stock_data_part_deaux()
+# update_individual_dividend_stock_data_part_deaux()
 
+def full_scope_ticker_update(ticker):
+    forCount = 1
+
+    annual_financials = db_fin_calls.get_annual_financials(connection, ticker)
+    print(f"----------------{ticker} ANNUAL FINANCIALS ----------------------") 
+    print(annual_financials)
+    is_dividend_payer = db_aux.determine_if_dividend_payer_from_annual_financials(annual_financials)
+    print(f"{forCount}/X- {ticker} is a dividend payer?: {is_dividend_payer}")
+    db_calls.update_db_with_annual_financials(connection, ticker, is_dividend_payer, annual_financials)
+    time.sleep(3)
+    if is_dividend_payer:
+      historic_dividends = db_fin_calls.get_historic_dividends_from_fmp(connection, ticker)
+      if historic_dividends == None or historic_dividends["historical"] == [] or len(historic_dividends["historical"]) == 0: # Although dividends in Annual Statement, sometimes FMP does not have dividend history
+        db_calls.update_db_dividend_payer_false(connection, False, ticker)
+        print(f"{ticker} annuals indicate dividends, but bc fmp retrived but no actual content in dividend history")
+        # continue # uncommnent for use when looping throu tickers
+      else:
+        print("----------------HISTORICAL DIVIDENDS ----------------------")  
+        print(historic_dividends)
+        time.sleep(3) # Delay to prevent API overload
+        update_db_with_historic_dividends_and_related_calculations(connection, historic_dividends, ticker)
+        db_fin_calls.get_company_profiles_and_update_db(connection, ticker) # 1 finnhub API call
+        time.sleep(3) # Delay to prevent API overload
+        db_fin_calls.get_basic_financials_hi_low_beta_and_update_db(connection, ticker) # 1 finnhub API call
+        time.sleep(3) # Delay to prevent API overload
+        db_calculations.calculate_payout_ratios_and_update_db(connection, ticker) # No API call
+        db_calls.add_event_to_run_log(connection, f"{ticker} individual stock information updated")
+        print(f"{forCount}/X - Completed task 3 of 3 update single stock data of {ticker} @ {datetime.datetime.now()}")
+    forCount += 1
+
+TICKER = "ABBV"
+full_scope_ticker_update(TICKER)
 
 while True:
   schedule.run_pending()

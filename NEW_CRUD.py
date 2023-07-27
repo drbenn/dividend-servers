@@ -17,13 +17,20 @@ import psycopg2
 from psycopg2.extras import Json
 from decimal import Decimal
 
+from flask_sqlalchemy import SQLAlchemy
+
 
 
 
 
 app = Flask(__name__)
 cors = CORS(app)
-app.config['CORS_HEADERS'] = 'Content-Type'
+# app.config['CORS_HEADERS'] = 'Content-Type'
+# dialect+driver://username:password@host:port/database
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@localhost/newDB'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+
 
 connection = psycopg2.connect(
     host="localhost",
@@ -68,7 +75,7 @@ cur = connection.cursor()
 @app.route("/")
 @cross_origin()
 def hello_world():
-    return "<p>Hello, Grizzly Server!</p>"
+    return "<p>Hello, World! from Flask</p>"
 
 
 @app.route("/json")
