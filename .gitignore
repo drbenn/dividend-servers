@@ -1,2 +1,8 @@
 __pycache__/
 **/grizzly_db_builder/api_keys.py
+**/mysql_grizzly/api_keys.py
+
+node_modules
+dist
+dist-ssr
+*.local

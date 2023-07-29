@@ -1,21 +1,29 @@
 const express = require('express');
-const { Pool } = require('pg'); // Import Pool from pg module
+// const { Pool } = require('pg'); // Import Pool from pg module
 const cors = require('cors'); // Import the cors module
-const app = express();
 const axios = require('axios');
+const mysql = require('mysql2');
+
+const app = express();
 const port = 3000;
 
 app.use(cors());
 app.use(express.json());
 
-// PostgreSQL database configuration
-const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost', // Default is 'localhost'
-  database: 'NewDB',
-  password: 'postgres',
-  port: 5432 // Default PostgreSQL port
+const db = mysql.createConnection({
+  host: "localhost",
+  user: "root",
+  password: "pass",
+  database: "grizzly"
 });
+// PostgreSQL database configuration
+// const pool = new Pool({
+//   user: 'postgres',
+//   host: 'localhost', // Default is 'localhost'
+//   database: 'NewDB',
+//   password: 'postgres',
+//   port: 5432 // Default PostgreSQL port
+// });
 
 grizzly_users_db_schema = {
   "username": 0,
@@ -46,12 +54,18 @@ data_schema = {
  "annual_dividend": 18
 }
 
+// const today = new Date();
+// const date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+
+const MOMENT = require( 'moment' );
+let date = MOMENT().format( 'YYYY-MM-DD');
+
 app.get('/', async (req, res) => {
   try {
     // Example query to test the connection
-    const { rows } = await pool.query('SELECT NOW() AS current_time');
-    const currentTime = rows[0].current_time;
-    res.send(`Hello, World! The current time is: ${currentTime}`);
+    // const { rows } = await pool.query('SELECT NOW() AS current_time');
+    // const currentTime = rows[0].current_time;
+    res.send(`Hello, World! The current time is: ${date}`);
   } catch (error) {
     console.error('Error executing query:', error);
     res.status(500).send('Error');
@@ -194,87 +208,119 @@ function http_query_to_db_query_tickers(tickers) {
 
 
 app.post('/dataquery', async (req, res) => {
-  try {
-    console.log('in data query');
-    const tickers_submitted = req.body;
-    console.log(tickers_submitted);
-    const tickers_query = http_query_to_db_query_tickers(tickers_submitted)
-    // Assuming you have a table called 'your_table_name' with columns 'name' and 'value'
-    console.log(tickers_query);
-    const { rows } =await pool.query(`SELECT ticker, name, equity_type, industry, website, logo, dividend_yield, years_dividend_growth, growth_all_years_of_history, payout_ratios, three_year_cagr, five_year_cagr, year_price_high, year_price_low, beta, backup_stock_price, backup_stock_price_date_saved, dividend_payment_months_and_count, annual_dividends from grizzly_stocks WHERE ${tickers_query}`);
+  console.log('in data query');
+  const tickers_submitted = req.body;
+  console.log(tickers_submitted);
+  const tickers_query = http_query_to_db_query_tickers(tickers_submitted)
+  console.log(tickers_query);
+  const sql = `SELECT ticker, name, equity_type, industry, website, logo, dividend_yield, years_dividend_growth, growth_all_years_of_history, payout_ratios, three_year_cagr, five_year_cagr, year_price_high, year_price_low, beta, backup_stock_price, backup_stock_price_date_saved, dividend_payment_months_and_count, annual_dividends from grizzly_stocks WHERE ${tickers_query}`;
+  // const val =
+  db.query(sql, (err, data) => {
+    if (err) {
+      return res.status(400).json({ error: 'Stock Retrieval Failed, try again'});
+    } else {
+      console.log(data);
+      console.log(typeof(data))
+      const json_data = JSON.stringify(data);
+      console.log(typeof(json_data))
+      // const success_msg = 'Stock data retrieval successful';
+      return res.status(201).json({data: json_data});
+    }
+  })
 
-    // After successful insertion, fetch data from the database
-    // const { rows } = await pool.query('SELECT * FROM your_table_name');
-    console.log(rows);
-    let json_rows = JSON.stringify(rows);
-    res.status(201).json({ message: 'Data added successfully', data: json_rows });
-  } catch (error) {
-    console.error('Error executing query:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
+  // try {
+  //   console.log('in data query');
+  //   const tickers_submitted = req.body;
+  //   console.log(tickers_submitted);
+  //   const tickers_query = http_query_to_db_query_tickers(tickers_submitted)
+  //   // Assuming you have a table called 'your_table_name' with columns 'name' and 'value'
+  //   console.log(tickers_query);
+  //   const { rows } =await pool.query(`SELECT ticker, name, equity_type, industry, website, logo, dividend_yield, years_dividend_growth, growth_all_years_of_history, payout_ratios, three_year_cagr, five_year_cagr, year_price_high, year_price_low, beta, backup_stock_price, backup_stock_price_date_saved, dividend_payment_months_and_count, annual_dividends from grizzly_stocks WHERE ${tickers_query}`);
+
+  //   // After successful insertion, fetch data from the database
+  //   // const { rows } = await pool.query('SELECT * FROM your_table_name');
+  //   console.log(rows);
+  //   let json_rows = JSON.stringify(rows);
+  //   res.status(201).json({ message: 'Data added successfully', data: json_rows });
+  // } catch (error) {
+  //   console.error('Error executing query:', error);
+  //   res.status(500).json({ error: 'Internal Server Error' });
+  // }
 });
 
 
 app.post('/login', async (req, res) => {
-  try {
-    const user_data = req.body;
-    const submitted_username = user_data["username"]
-    const submitted_password = user_data["password"]
-    console.log(user_data);
-    // Check if the username already exists
-    const { rows } = await pool.query(`SELECT * from grizzly_users where username = $1 AND password = $2`, [submitted_username, submitted_password]);
-    if (!rows.length) {
-      return res.status(400).json({ error: 'Username or password incorrect' });
+  const user_data = req.body;
+  const submitted_username = user_data["username"];
+  const submitted_password = user_data["password"];
+  const login_query = `SELECT * from grizzly_users WHERE username = ? AND password = ?`;
+  const login_params = [submitted_username, submitted_password];
+  db.query(login_query, login_params, (err, data) => {
+    if (err) {
+      return res.status(400).json({ error: 'Login Failed, try again'});
+    } else {
+      console.log(data);
+      const success_msg = 'User login successful';
+      const failed_msg = 'Username or password incorrect';
+      data.length === 1 ? res.status(201).json({ message: success_msg }) : res.status(400).json({ error: failed_msg});
     }
-    // Username and password are correct
-    return res.status(201).json({ message: 'User login successful' });
-  } catch (error) {
-    console.error('Error executing query:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
+  })
 });
 
 
+// function insertNewUser(submitted_username, submitted_email, submitted_password) {
 
+// }
 
 app.post('/register', async (req, res) => {
-  try {
-    const user_data = req.body;
-    const submitted_username = user_data["username"]
-    const submitted_email = user_data["email"]
-    const submitted_password = user_data["password"]
-    const time = new Date();
-    // Check if the username already exists
-    const { rows } = await pool.query(`SELECT * from grizzly_users where username = $1 OR email = $2`, [submitted_username, submitted_email]);
-    console.log(rows);
-    if (rows.length > 0) {
+  const user_data = req.body;
+  const submitted_username = user_data["username"];
+  const submitted_email = user_data["email"];
+  const submitted_password = user_data["password"];
+  const existing_query = `SELECT * from grizzly_users WHERE username = ? OR email = ?`;
+  const existing_params = [submitted_username, submitted_email];
+  db.query(existing_query, existing_params, (err, data) => {
+    if (err) {
       return res.status(400).json({ error: 'Username or email is already taken' });
     }
-    // Username is available, proceed with the POST request
-    await pool.query(`INSERT INTO grizzly_users (username, email, password, join_date) values ($1, $2, $3, $4)`, [submitted_username, submitted_email, submitted_password, time]);
-    return res.status(201).json({ message: 'Data added successfully' });
-  } catch (error) {
-    console.error('Error executing query:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
-  }
+    else {
+      const insert_user_query = `INSERT INTO grizzly_users (username, email, password, join_date) VALUES (\'${submitted_username}\', \'${submitted_email}\', \'${submitted_password}\', \'${date}\')`;
+      db.query(insert_user_query, (err, data2) => {
+        if (data.length > 0) {
+          return res.status(400).json({ error: 'Username or email is already taken' });
+        }
+        else {
+          return res.status(201).json({ message: 'Registration added successfully' });
+        }
+    })
+  }})
 });
 
 
 
 app.get('/searchtickers', async (req, res) => {
-  try {
+  const sql = 'SELECT ticker, name from grizzly_stocks WHERE industry IS NOT NULL AND dividend_yield IS NOT NULL AND years_dividend_growth IS NOT NULL AND payout_ratios IS NOT NULL AND three_year_cagr IS NOT NULL  AND five_year_cagr IS NOT NULL AND annual_dividends IS NOT NULL';
+  db.query(sql, (err, data) => {
+    if (err) return res.json("ERROR");
+    return res.json(data);
+  })
+
+
+  // try {
     // Example query to test the connection
-    const { rows } = await pool.query('SELECT ticker, name from grizzly_stocks where has_dividend = \'true\' AND industry IS NOT NULL AND dividend_yield IS NOT NULL AND years_dividend_growth IS NOT NULL AND payout_ratios IS NOT NULL AND three_year_cagr IS NOT NULL  AND five_year_cagr IS NOT NULL AND annual_dividends IS NOT NULL');
+    // const { rows } = await pool.query('SELECT ticker, name from grizzly_stocks where has_dividend = \'true\' AND industry IS NOT NULL AND dividend_yield IS NOT NULL AND years_dividend_growth IS NOT NULL AND payout_ratios IS NOT NULL AND three_year_cagr IS NOT NULL  AND five_year_cagr IS NOT NULL AND annual_dividends IS NOT NULL');
     // console.log("RES JSONHIT");
     // console.log(rows);
-    let str = JSON.stringify(rows);
-    // console.log(str);
-    res.send(str)
-  } catch (error) {
-    console.error('Error executing query:', error);
-    res.status(500).send('Error');
-  }
-});
+
+  //   let str = JSON.stringify(rows);
+  //   // console.log(str);
+  //   res.send(str)
+  // } catch (error) {
+  //   console.error('Error executing query:', error);
+  //   res.status(500).send('Error');
+  // }
+}
+);
 
 
 
