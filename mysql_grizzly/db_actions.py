@@ -14,6 +14,12 @@ def get_all_stock_db_data_with_no_initial_review(cur) -> any:
   retrieved_db_data = cur.fetchall()
   return retrieved_db_data
 
+def get_all_stock_db_data_with_has_div_but_no_addtl_info(cur) -> any:
+  query = "SELECT * FROM grizzly_stocks WHERE has_dividend IS True AND payout_ratios IS NULL ORDER BY ticker"
+  cur.execute(query)
+  retrieved_db_data = cur.fetchall()
+  return retrieved_db_data
+
 def get_stock_db_data_where_has_payout_but_has_divi_skipped(cur) -> any:
   query = "SELECT * FROM grizzly_stocks WHERE has_dividend IS NULL AND payout_ratios IS NOT NULL ORDER BY ticker"
   cur.execute(query)
@@ -56,10 +62,21 @@ def update_db_with_profile_basics_payouts(cur, db, profile_data, basic_financial
   industry = "N/A"
   website = "N/A"
   logo = "N/A"
+  print(profile_data)
   if len(profile_data) > 2:
     industry = profile_data[0]
     website = profile_data[1]
     logo = profile_data[2]
+
+  if len(website) > 99:
+    ini_str = website
+    sub_str = "/"
+    occurrence = 3
+    val = -1
+    for i in range(0, occurrence):
+      val = ini_str.find(sub_str, val + 1)
+    new_site = ini_str[:val + 1]
+    website = new_site
 
   json_basic_financials = basic_financials_data[0] # TOO BIG - DO WITHOUT
   year_high = basic_financials_data[1]
@@ -68,7 +85,7 @@ def update_db_with_profile_basics_payouts(cur, db, profile_data, basic_financial
   # print("---------------------------SHAZAM")
   # print(json_basic_financials)
 
-
+  print(website)
   json_annual_payout_ratios = json.dumps(annual_payout_ratios)
   sql = "UPDATE grizzly_stocks SET has_dividend = %s, industry = %s, website = %s, logo = %s, year_price_high = %s, year_price_low = %s, beta = %s, payout_ratios = %s, last_updated = %s WHERE ticker = %s"
   val = (True, industry, website, logo, year_high, year_low, beta, json_annual_payout_ratios, string_date, ticker)

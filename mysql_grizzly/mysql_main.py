@@ -187,17 +187,21 @@ def db_stocks_to_tickers(db_stocks) -> any:
   return eligible_tickers
 
 def update_stock_info_if_uninvestigated():
-  all_db_data = db_actions.get_all_stock_db_data_with_no_initial_review(cur)
+  # all_db_data = db_actions.get_all_stock_db_data_with_no_initial_review(cur)
+  db_has_div_no_fmp = db_actions.get_all_stock_db_data_with_has_div_but_no_addtl_info(cur)
+  print(len(db_has_div_no_fmp))
   # print(all_db_data)
   # print("DATA GOT")
-  tickers_to_check = db_stocks_to_tickers(all_db_data)
+  tickers_to_check = db_stocks_to_tickers(db_has_div_no_fmp)
   print(tickers_to_check)
+  latest = tickers_to_check.index("FTAI") + 1
+  print(tickers_to_check[latest:])
   # latest = tickers_to_check.index("EWTX")
   # print(tickers_to_check[latest:])
 
 
   # shortenend_tickers = tickers_to_check[latest:]
-  full_scope_ticker_update(tickers_to_check)
+  full_scope_ticker_update(tickers_to_check[latest:])
 
 
 
@@ -217,21 +221,21 @@ def update_has_dividend_only_bc_fmp_exhausted():
 
 
 
-def update_missed_stocks_with_has_dividend():
-  missed_stocks = db_actions.get_stock_db_data_where_has_payout_but_has_divi_skipped(cur)
-  tickers_to_check = db_stocks_to_tickers(missed_stocks)
-  print(tickers_to_check)
-  print(len(tickers_to_check))
-  for ticker in tickers_to_check:
-    db_actions.update_db_dividend_payer_true(cur, db, True, ticker)
+# def update_missed_stocks_with_has_dividend():
+#   missed_stocks = db_actions.get_stock_db_data_where_has_payout_but_has_divi_skipped(cur)
+#   tickers_to_check = db_stocks_to_tickers(missed_stocks)
+#   print(tickers_to_check)
+#   print(len(tickers_to_check))
+#   for ticker in tickers_to_check:
+#     db_actions.update_db_dividend_payer_true(cur, db, True, ticker)
 
-update_missed_stocks_with_has_dividend()
-
-
+# update_missed_stocks_with_has_dividend()
 
 
-# FULL SCOPE ON NULL STOCKS
-# update_stock_info_if_uninvestigated()
+
+
+# FULL SCOPE ON HAS_DIVIDEND TRUE BUT NOTHING ELSE
+update_stock_info_if_uninvestigated()
 
 # ONLY HAS DIVIDEND
 # update_has_dividend_only_bc_fmp_exhausted()

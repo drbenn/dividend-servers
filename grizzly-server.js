@@ -213,7 +213,7 @@ app.post('/dataquery', async (req, res) => {
   console.log(tickers_submitted);
   const tickers_query = http_query_to_db_query_tickers(tickers_submitted)
   console.log(tickers_query);
-  const sql = `SELECT ticker, name, equity_type, industry, website, logo, dividend_yield, years_dividend_growth, growth_all_years_of_history, payout_ratios, three_year_cagr, five_year_cagr, year_price_high, year_price_low, beta, backup_stock_price, backup_stock_price_date_saved, dividend_payment_months_and_count, annual_dividends from grizzly_stocks WHERE ${tickers_query}`;
+  const sql = `SELECT ticker, name, equity_type, industry, website, logo, dividend_yield, years_dividend_growth, growth_all_years_of_history, payout_ratios, three_year_cagr, five_year_cagr, year_price_high, year_price_low, beta, backup_stock_price, backup_stock_price_date_saved, dividend_payment_months_and_count, annual_dividends from grizzly_stocks WHERE ${tickers_query} AND CHAR_LENGTH(payout_ratios) > 5`;
   // const val =
   db.query(sql, (err, data) => {
     if (err) {
@@ -297,9 +297,17 @@ app.post('/register', async (req, res) => {
 });
 
 
+app.get('/dbtest', async (req, res) => {
+  const sql = `SELECT name FROM grizzly.grizzly_stocks where ticker="LAND"`;
+  db.query(sql, (err, data) => {
+    if (err) return res.json("ERROR");
+    return res.json(data);
+  })
+})
+
 
 app.get('/searchtickers', async (req, res) => {
-  const sql = 'SELECT ticker, name from grizzly_stocks WHERE industry IS NOT NULL AND dividend_yield IS NOT NULL AND years_dividend_growth IS NOT NULL AND payout_ratios IS NOT NULL AND three_year_cagr IS NOT NULL  AND five_year_cagr IS NOT NULL AND annual_dividends IS NOT NULL';
+  const sql = `SELECT ticker, name from grizzly_stocks WHERE industry IS NOT NULL AND dividend_yield IS NOT NULL AND years_dividend_growth IS NOT NULL AND three_year_cagr IS NOT NULL  AND five_year_cagr IS NOT NULL AND annual_dividends IS NOT NULL AND CHAR_LENGTH(payout_ratios) > 5`;
   db.query(sql, (err, data) => {
     if (err) return res.json("ERROR");
     return res.json(data);

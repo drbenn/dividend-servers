@@ -88,3 +88,13 @@ https://stackoverflow.com/questions/63817166/how-to-install-psycopg2-on-namechea
 * 4. Go to python app, in configuration files type in requirements.txt and add
 
 * create requirements with pip freeze > requirements.txt in terminal
+
+
+# MYSQL DATABASE EXPORT/Namecheap IMPORT
+1. In mysql workbench leftclick on db and select alter database, convert database to plain basic utf8. Namecheap uses an older version and the latest whatever collation will not work.
+2. Edit the imported sql file with text editor and change instances of - Find ‘utf8mb4_0900_ai_ci’ & replace it with ‘utf8mb4_unicode_ci’. 
+https://meetanshi.com/blog/error-1273-unknown-collation-utf8mb4-0900-ai-ci-in-mysql/
+3. In namecheap phpMyAdmin import, and select file...should upload and create db/tables with no issue now
+
+# Depoly Node app to namecheap
+https://www.youtube.com/watch?v=qGvteC3dZnk
