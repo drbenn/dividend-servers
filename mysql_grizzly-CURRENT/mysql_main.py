@@ -194,7 +194,7 @@ def update_stock_info_if_uninvestigated():
   # print("DATA GOT")
   tickers_to_check = db_stocks_to_tickers(db_has_div_no_fmp)
   print(tickers_to_check)
-  latest = tickers_to_check.index("FTAI") + 1
+  latest = tickers_to_check.index("UBOH")
   print(tickers_to_check[latest:])
   # latest = tickers_to_check.index("EWTX")
   # print(tickers_to_check[latest:])

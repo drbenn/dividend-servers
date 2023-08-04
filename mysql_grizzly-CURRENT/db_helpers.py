@@ -29,8 +29,13 @@ def combine_dividends_into_annual_dividends(historic_dividends, payment_date_str
   for payment in historic_dividends:
     # listed year of most recent payment date
     if len(payment[payment_date_string][:4]) > 0:
+      print(payment)
       payment_year = int(payment[payment_date_string][:4])
-      dividend_amount = float(payment["dividend"])
+      dividend_amount = 0
+      if payment["dividend"] == None:
+        dividend_amount = 0
+      else:
+        dividend_amount = float(payment["dividend"])
       if any(dictionary.get("year") == payment_year for dictionary in annual_dividends):
         for i in annual_dividends:
           if i["year"] == payment_year:

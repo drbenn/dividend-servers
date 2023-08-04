@@ -8,10 +8,10 @@ pip install psycopg2  // dont install this, install psycopg2-binary
 pip install psycopg2-binary
 
 
-<!-- https://finnhub.io/ -->
-<!-- https://www.alphavantage.co/documentation/ --> - up to 5 API requests per minute and 500 requests per day
-<!-- https://site.financialmodelingprep.com/developer/docs/ --> - up to 250 requests/day
-<!-- https://stackabuse.com/get-request-query-parameters-with-flask/ -->
+https://finnhub.io/
+https://www.alphavantage.co/documentation/ - up to 5 API requests per minute and 500 requests per day
+https://site.financialmodelingprep.com/developer/docs/  - up to 250 requests/day
+https://stackabuse.com/get-request-query-parameters-with-flask/
 https://pysql.tecladocode.com/section05/lectures/04_psycopg2_vs_psycopg2-binary/
 https://stackoverflow.com/questions/63817166/how-to-install-psycopg2-on-namecheap-cpanel
 
@@ -23,6 +23,7 @@ https://stackoverflow.com/questions/63817166/how-to-install-psycopg2-on-namechea
 # https://www.alphavantage.co/documentation/
 
 
+<!-- POSTGRES Table creation commands -->
 
 # CREATE TABLE grizzly_stocks (
 # 	ticker VARCHAR PRIMARY KEY,
@@ -73,28 +74,3 @@ https://stackoverflow.com/questions/63817166/how-to-install-psycopg2-on-namechea
 # 	summary VARCHAR ( 100 )
 # );
 
-# NAMECHEAP HOSTING
-* https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwi_rb_qn4SAAxWPKlkFHV-nCksQFnoECBoQAQ&url=https%3A%2F%2Fwww.namecheap.com%2Fsupport%2Fknowledgebase%2Farticle.aspx%2F10048%2F2182%2Fhow-to-work-with-python-app%2F&usg=AOvVaw39kwn3CXhqjBE3YKbksZbI&opi=89978449
-
-* https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=&cad=rja&uact=8&ved=2ahUKEwi_rb_qn4SAAxWPKlkFHV-nCksQFnoECCcQAQ&url=https%3A%2F%2Fwww.namecheap.com%2Fsupport%2Fknowledgebase%2Farticle.aspx%2F9587%2F29%2Fhow-to-run-python-scripts%2F&usg=AOvVaw0XEYSO6nsXopt3gXHIsq-w&opi=89978449
-
-* https://devpress.csdn.net/cicd/62ec375619c509286f416824.html
-
-* https://www.youtube.com/watch?v=IBfj_0Zf2Mo
-
-* 1. create app
-* 2. stop app
-* 3. go to file manager and overwrite app.py and also upload requirements.txt in same directory
-* 4. Go to python app, in configuration files type in requirements.txt and add
-
-* create requirements with pip freeze > requirements.txt in terminal
-
-
-# MYSQL DATABASE EXPORT/Namecheap IMPORT
-1. In mysql workbench leftclick on db and select alter database, convert database to plain basic utf8. Namecheap uses an older version and the latest whatever collation will not work.
-2. Edit the imported sql file with text editor and change instances of - Find ‘utf8mb4_0900_ai_ci’ & replace it with ‘utf8mb4_unicode_ci’. 
-https://meetanshi.com/blog/error-1273-unknown-collation-utf8mb4-0900-ai-ci-in-mysql/
-3. In namecheap phpMyAdmin import, and select file...should upload and create db/tables with no issue now
-
-# Depoly Node app to namecheap
-https://www.youtube.com/watch?v=qGvteC3dZnk
