@@ -43,8 +43,6 @@ db_schema = {
   "annual_dividends": 20,
   "historic_dividends": 21,
   "basic_financial_metrics": 22,
-  # "quarterly_financials": 23,
-  # "historic_annual_financials": 24,
   "basic_financials": 23
 }
 
